@@ -455,6 +455,26 @@ async function discover() {
   render()
 }
 
+async function hydrateSettingsForm(playlist) {
+  if (playlist) {
+    byId('plName').value = playlist.name ?? ''
+    byId('plPortal').value = playlist.portal ?? ''
+    byId('plUser').value = playlist.username ?? ''
+    byId('plPass').placeholder = 'senha guardada no Keychain'
+  }
+  const invoke = tauriInvoke()
+  if (!invoke) return
+  try {
+    const raw = await invoke('seed_read')
+    const seed = raw ? JSON.parse(raw) : null
+    if (Array.isArray(seed?.candidates)) {
+      byId('plCandidates').value = seed.candidates.join('\n')
+    }
+  } catch {
+    return
+  }
+}
+
 async function bootSeed() {
   const invoke = tauriInvoke()
   if (!invoke) return false
@@ -488,6 +508,7 @@ async function bootSeed() {
     password,
   })
   await saveSecret(playlist.id, password)
+  await hydrateSettingsForm(playlist)
   client = createXtreamClient({
     playlist,
     fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
@@ -509,6 +530,7 @@ async function bootSaved() {
     playlist: saved.password ? saved : restorePlaylist(saved, password),
     fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
   })
+  await hydrateSettingsForm(saved)
   shell = createTvShell()
   render()
   return true
