@@ -27,7 +27,7 @@ function saveResume(video, item) {
 }
 
 function playerVideo(url, item) {
-  const video = el('video', 'w-full border-2 border-line bg-black')
+  const video = el('video', 'max-h-[65vh] w-full border border-line bg-black')
   video.controls = true
   video.playsInline = true
   const source = resolvePlayerSource(url, { canPlay: (type) => video.canPlayType(type) })
@@ -96,7 +96,7 @@ function openCatchUp(item, listing) {
 
 /** Lista o EPG com atalho de catch-up quando há archive. */
 export function epgBlock(item) {
-  const list = el('ul', 'list-none p-0 text-[20px] text-mute')
+  const list = el('ul', 'list-none p-0 text-[clamp(14px,1vw,20px)] text-mute')
   for (const listing of state.epg.listings.slice(0, 6)) {
     const row = el('li', '', `${listing.start} · ${listing.title}`)
     if (listing.hasArchive) {

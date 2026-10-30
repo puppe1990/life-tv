@@ -7,8 +7,10 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body class="font-sans">
-    <header class="flex items-center gap-10 px-14 pt-7 pb-6">
-      <nav id="tabs" class="flex items-center gap-9">
+    <header
+      class="flex flex-wrap items-center gap-4 px-6 pt-5 pb-4 md:gap-8 md:px-10 md:pt-7 md:pb-6 xl:px-14"
+    >
+      <nav id="tabs" class="flex flex-wrap items-center gap-4 md:gap-9">
         <button
           type="button"
           id="tab-inicio"
@@ -50,50 +52,56 @@
         type="search"
         autocomplete="off"
         placeholder="Buscar"
-        class="w-[520px] rounded-full border border-line bg-transparent px-6 py-3 text-[22px] text-ink outline-none"
+        class="w-full max-w-[520px] flex-1 rounded-full border border-line bg-transparent px-5 py-2 text-[clamp(15px,1.2vw,22px)] text-ink outline-none md:px-6 md:py-3"
       />
       <div class="ml-auto flex items-center gap-4">
-        <span id="hint" class="text-[18px] tracking-[0.08em] text-mute">← → ↑ ↓ · Enter · Esc</span>
-        <img src="./logo.png" alt="Life TV" class="h-11 w-11" />
-        <span class="text-[26px] font-semibold tracking-[0.22em] uppercase">Life TV</span>
+        <span
+          id="hint"
+          class="hidden text-[clamp(13px,0.9vw,18px)] tracking-[0.08em] text-mute lg:inline"
+          >← → ↑ ↓ · Enter · Esc</span
+        >
+        <img src="./logo.png" alt="Life TV" class="h-8 w-8 md:h-11 md:w-11" />
+        <span class="text-[clamp(18px,1.4vw,26px)] font-semibold tracking-[0.22em] uppercase"
+          >Life TV</span
+        >
       </div>
     </header>
 
-    <main class="px-14 pb-16">
+    <main class="px-6 pb-10 md:px-10 md:pb-14 xl:px-14 xl:pb-16">
       <section
         id="home"
-        class="grid grid-cols-[repeat(4,minmax(200px,1fr))] gap-6"
+        class="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 md:gap-6"
         aria-label="Início"
       ></section>
 
       <section
         id="catalog"
-        class="grid min-h-[560px] grid-cols-[340px_520px_1fr] items-start"
+        class="grid min-h-[320px] grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(180px,280px)_minmax(0,1fr)] xl:grid-cols-[minmax(200px,320px)_minmax(240px,480px)_minmax(0,1fr)]"
         hidden
       >
-        <ul id="categories" class="m-0 list-none p-0"></ul>
-        <ul id="items" class="m-0 list-none p-0"></ul>
+        <ul id="categories" class="m-0 max-h-[60vh] list-none overflow-y-auto p-0"></ul>
+        <ul id="items" class="m-0 max-h-[60vh] list-none overflow-y-auto p-0"></ul>
         <aside
           id="detail"
-          class="flex h-full flex-col justify-between gap-6 bg-panel/40 p-7"
+          class="col-span-full flex min-w-0 flex-col justify-between gap-4 bg-panel/40 p-4 md:p-6 lg:col-span-2 xl:col-auto"
         ></aside>
       </section>
 
-      <section id="player" class="bg-panel p-10" hidden></section>
+      <section id="player" class="min-w-0 bg-panel p-4 md:p-8" hidden></section>
 
       <section id="settings" hidden>
-        <h1 class="m-0 mb-2 text-[38px] font-semibold">Ajustes</h1>
+        <h1 class="m-0 mb-2 text-[clamp(24px,2.2vw,38px)] font-semibold">Ajustes</h1>
         <p class="mb-6 max-w-[46ch] text-[20px] text-mute">
           Playlist própria. Sem MAC, sem VPN, sem catálogo de terceiros.
         </p>
-        <form id="playlistForm" class="grid max-w-[680px] gap-4">
+        <form id="playlistForm" class="grid w-full max-w-[680px] gap-4">
           <label class="grid gap-2 text-[18px] text-mute"
             >Nome
             <input
               id="plName"
               name="name"
               autocomplete="off"
-              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
+              class="w-full border border-line bg-well px-4 py-3 font-sans text-[clamp(16px,1.2vw,22px)] text-ink"
             />
           </label>
           <label class="grid gap-2 text-[18px] text-mute"
@@ -102,7 +110,7 @@
               id="plPortal"
               name="portal"
               placeholder="http://servidor:8080"
-              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
+              class="w-full border border-line bg-well px-4 py-3 font-sans text-[clamp(16px,1.2vw,22px)] text-ink"
             />
           </label>
           <label class="grid gap-2 text-[18px] text-mute"
@@ -111,7 +119,7 @@
               id="plUser"
               name="username"
               autocomplete="off"
-              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
+              class="w-full border border-line bg-well px-4 py-3 font-sans text-[clamp(16px,1.2vw,22px)] text-ink"
             />
           </label>
           <label class="grid gap-2 text-[18px] text-mute"
@@ -121,7 +129,7 @@
               name="password"
               type="password"
               autocomplete="current-password"
-              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
+              class="w-full border border-line bg-well px-4 py-3 font-sans text-[clamp(16px,1.2vw,22px)] text-ink"
             />
           </label>
           <label class="grid gap-2 text-[18px] text-mute"
@@ -131,11 +139,14 @@
               name="candidates"
               rows="3"
               placeholder="http://servidor-a.com&#10;http://servidor-b.com"
-              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
+              class="w-full border border-line bg-well px-4 py-3 font-sans text-[clamp(16px,1.2vw,22px)] text-ink"
             ></textarea>
           </label>
-          <div class="flex gap-4">
-            <button type="submit" class="cursor-pointer border-0 bg-action px-6 py-3 text-[22px]">
+          <div class="flex flex-wrap gap-3 md:gap-4">
+            <button
+              type="submit"
+              class="cursor-pointer border-0 bg-action px-5 py-3 text-[clamp(16px,1.2vw,22px)]"
+            >
               Guardar XC
             </button>
             <button
