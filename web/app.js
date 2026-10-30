@@ -112,10 +112,49 @@ function playUrl() {
   return ''
 }
 
+function candidatesOf() {
+  const typed = (byId('plCandidates')?.value ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const saved = store.list().map((item) => item.portal)
+  return [...typed, ...saved].filter(Boolean)
+}
+
+async function rotatePortal() {
+  const [saved] = store.list()
+  if (!saved || saved.kind !== 'xc') return null
+  const password = saved.password ?? (await readSecret(saved.id))
+  if (!password) return null
+  const found = await discoverPortal({
+    candidates: candidatesOf(),
+    username: saved.username,
+    password,
+    fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
+  })
+  if (!found.portal) return null
+  client = createXtreamClient({
+    playlist: restorePlaylist({ ...saved, portal: found.portal }, password),
+    fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
+  })
+  return found.portal
+}
+
+async function withRotation(run) {
+  try {
+    return await run()
+  } catch (error) {
+    const rotated = await rotatePortal()
+    if (!rotated) throw error
+    errorText = `Portal trocado para ${rotated}`
+    return run()
+  }
+}
+
 async function fillCatalog() {
   try {
     errorText = ''
-    shell = bindCatalog(shell, await catalogFor(shell.catalogKind))
+    shell = bindCatalog(shell, await withRotation(() => catalogFor(shell.catalogKind)))
   } catch (err) {
     errorText = err.message
   }
@@ -204,8 +243,7 @@ function ensureSeriesUrl(item) {
   const key = String(item.id)
   if (seriesState.key === key) return
   seriesState = { key, url: '' }
-  client
-    .seriesEpisodes(item.id)
+  withRotation(() => client.seriesEpisodes(item.id))
     .then((episodes) => {
       const first = episodes[0]
       seriesState = { key, url: first ? client.seriesPlayUrl(first.id, first.extension) : '' }
@@ -220,8 +258,7 @@ function ensureEpg(item) {
   const key = String(item.id)
   if (epgState.key === key) return
   epgState = { key, listings: [] }
-  client
-    .shortEpg(item.id)
+  withRotation(() => client.shortEpg(item.id))
     .then((listings) => {
       epgState = { key, listings }
     })
