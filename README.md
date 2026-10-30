@@ -17,6 +17,9 @@ npm run tauri:app   # empacota target-app/Life TV.app (release + codesign ad-hoc
 
 Repo: https://github.com/puppe1990/life-tv
 
+Notas da engenharia reversa do APK de referência (protocolo, ofuscação, endpoints):
+[docs/reverse-engineering.md](docs/reverse-engineering.md).
+
 Home 10-foot: **Ao vivo / Filmes / Séries / Ajustes**. Setas e Enter. Demo local sem rede.
 
 ## O que entra
