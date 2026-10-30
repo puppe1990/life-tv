@@ -1,4 +1,5 @@
 import { createTvShell, focusHome, handleKey, openHomeTile } from '../src/tvShell.mjs'
+import { BRAND } from './config.mjs'
 import { byId } from './dom.mjs'
 import { renderAll } from './render.mjs'
 import { bootSaved, bootSeed, discover, fillCatalog, savePlaylist, startDemo } from './session.mjs'
@@ -56,6 +57,8 @@ function wireTabs() {
 }
 
 async function boot() {
+  document.title = BRAND
+  byId('brand').textContent = BRAND
   document.addEventListener('keydown', onKey)
   byId('demoBtn').addEventListener('click', startDemo)
   byId('discoverBtn').addEventListener('click', discover)

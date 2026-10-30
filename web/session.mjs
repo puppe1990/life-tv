@@ -3,6 +3,7 @@ import { createDemoFetch, DEMO_PLAYLIST } from '../src/demoPortal.mjs'
 import { restorePlaylist } from '../src/playlistSecret.mjs'
 import { bindCatalog, createTvShell } from '../src/tvShell.mjs'
 import { createXtreamClient } from '../src/xtreamClient.mjs'
+import { DEFAULT_PLAYLIST_NAME, SECRET_PLACEHOLDER, SEED_ACCOUNT } from './config.mjs'
 import { byId } from './dom.mjs'
 import { readSecret, readSeed, saveSecret, webFetch } from './bridge.mjs'
 import { clearError, setError, state } from './state.mjs'
@@ -164,7 +165,7 @@ export async function hydrateSettingsForm(playlist) {
     byId('plName').value = playlist.name ?? ''
     byId('plPortal').value = playlist.portal ?? ''
     byId('plUser').value = playlist.username ?? ''
-    byId('plPass').placeholder = 'senha guardada localmente'
+    byId('plPass').placeholder = SECRET_PLACEHOLDER
   }
   const seed = await readSeed()
   if (Array.isArray(seed?.candidates)) byId('plCandidates').value = seed.candidates.join('\n')
@@ -174,11 +175,11 @@ export async function hydrateSettingsForm(playlist) {
 export async function bootSeed() {
   const seed = await readSeed()
   if (!seed || !seed.username) return false
-  const password = await readSecret('seed')
+  const password = await readSecret(SEED_ACCOUNT)
   if (!password) return false
   const playlist = playlistStore.add({
     kind: 'xc',
-    name: seed.name ?? 'Casa',
+    name: seed.name ?? DEFAULT_PLAYLIST_NAME,
     portal: seed.portal,
     username: seed.username,
     password,

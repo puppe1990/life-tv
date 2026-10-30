@@ -19,6 +19,15 @@ npm run tauri:app   # target-app/Life TV.app
 
 Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.
 
+## Configuração (sem hardcode)
+
+- Identidade do app (nome, `identifier`, versão) mora em `src-tauri/tauri.conf.json`;
+  `scripts/build-macos-app.sh` deriva `.app`, binário, plist e versão dela.
+- Caminhos de dados usam `app.path().app_config_dir()` (o `identifier` decide), não string fixa.
+- Player externo: `LIFE_TV_PLAYER` (binário, padrão `mpv`) e `LIFE_TV_PLAYER_APP`
+  (fallback via `open -a`, padrão `IINA`).
+- UI/persistência: `web/config.mjs` (marca, chaves de storage, conta do seed, nome padrão).
+
 ## Mapa do web/ (cada módulo < 200 linhas)
 
 - `app.js` — wiring: atalhos, abas, boot (não desenha nada).
