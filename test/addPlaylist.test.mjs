@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { beforeEach, test } from 'node:test'
 import { createPlaylistStore } from '../src/addPlaylist.mjs'
+import { createJsonBucket } from '../src/jsonBucket.mjs'
 import { xcGetPhpUrl } from '../src/xtreamUrls.mjs'
 import {
   faker,
@@ -67,4 +68,32 @@ test('rejeita XC sem senha', () => {
 test('rejeita M3U sem url nem content', () => {
   const store = createPlaylistStore()
   assert.throws(() => store.add({ kind: 'm3u', name: fakerPlaylistName() }), /url ou content/)
+})
+
+function createStorage() {
+  const data = new Map()
+  return {
+    getItem(key) {
+      return data.get(key) ?? null
+    },
+    setItem(key, value) {
+      data.set(key, value)
+    },
+  }
+}
+
+test('reabre a store com a playlist XC gravada', () => {
+  const storage = createStorage()
+  const portal = `http://${faker.internet.domainName()}:8080`
+  const username = faker.internet.username()
+  const password = faker.internet.password()
+  const saved = createPlaylistStore({
+    bucket: createJsonBucket({ storage, key: 'life-tv:playlists' }),
+  }).add({ kind: 'xc', name: 'Casa', portal, username, password })
+  const reaberta = createPlaylistStore({
+    bucket: createJsonBucket({ storage, key: 'life-tv:playlists' }),
+  })
+  assert.equal(reaberta.list().length, 1)
+  assert.deepEqual(reaberta.list()[0], saved)
+  assert.equal(reaberta.add({ kind: 'xc', name: 'B', portal, username, password }).id, 'pl-2')
 })

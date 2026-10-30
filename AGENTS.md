@@ -14,6 +14,7 @@ npm run ci
 npm run dev         # css + http://127.0.0.1:8792/web/  (não use 8765)
 npm run tauri:dist  # web/ + src/ → .tauri-dist (frontendDist do Tauri)
 npm run tauri:dev   # janela Tauri 2 1920x1080
+npm run tauri:app   # target-app/Life TV.app
 ```
 
 Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.

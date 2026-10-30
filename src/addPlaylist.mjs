@@ -36,9 +36,13 @@ function addM3u(input) {
 }
 
 /** Playlist XC/M3U local. Campo `mac` do FlexTV não é gravado. */
-export function createPlaylistStore() {
-  const items = []
-  let seq = 0
+export function createPlaylistStore({ bucket = null } = {}) {
+  const saved = bucket?.read()
+  const items = Array.isArray(saved) ? saved : []
+  let seq = items.reduce((max, item) => Math.max(max, Number(String(item.id).slice(3)) || 0), 0)
+  function persist() {
+    bucket?.write(items)
+  }
   return {
     add(input) {
       if (!input || (input.kind !== 'xc' && input.kind !== 'm3u')) {
@@ -49,6 +53,7 @@ export function createPlaylistStore() {
         ...(input.kind === 'xc' ? addXc(input) : addM3u(input)),
       }
       items.push(playlist)
+      persist()
       return playlist
     },
     list() {

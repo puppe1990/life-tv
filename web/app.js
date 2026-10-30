@@ -23,7 +23,6 @@ import { resolvePlayerSource } from '../src/playerSource.mjs'
 import { createResumeStore } from '../src/resumeStore.mjs'
 import { createXtreamClient } from '../src/xtreamClient.mjs'
 
-const store = createPlaylistStore()
 let shell = createTvShell()
 let client = demoClient()
 let errorText = ''
@@ -40,6 +39,10 @@ function localStore() {
     return null
   }
 }
+
+const store = createPlaylistStore({
+  bucket: createJsonBucket({ storage: localStore(), key: 'life-tv:playlists' }),
+})
 
 const resumeStore = createResumeStore({
   bucket: createJsonBucket({ storage: localStore(), key: 'life-tv:resume' }),
@@ -348,11 +351,23 @@ function savePlaylist(event) {
   }
 }
 
+function bootSaved() {
+  const [saved] = store.list()
+  if (!saved || saved.kind !== 'xc') return false
+  client = createXtreamClient({
+    playlist: saved,
+    fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
+  })
+  shell = createTvShell()
+  render()
+  return true
+}
+
 function boot() {
   document.addEventListener('keydown', onKey)
   byId('demoBtn').addEventListener('click', bootDemo)
   byId('playlistForm').addEventListener('submit', savePlaylist)
-  bootDemo()
+  if (!bootSaved()) bootDemo()
 }
 
 boot()
