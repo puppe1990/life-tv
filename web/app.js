@@ -418,7 +418,7 @@ async function savePlaylist(event) {
       playlist,
       fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
     })
-    errorText = stored ? '' : 'Senha não foi pro Keychain: será pedida a cada abertura.'
+    errorText = stored ? '' : 'Senha não foi salva: será pedida a cada abertura.'
     shell = createTvShell()
     render()
   } catch (err) {
@@ -460,7 +460,7 @@ async function hydrateSettingsForm(playlist) {
     byId('plName').value = playlist.name ?? ''
     byId('plPortal').value = playlist.portal ?? ''
     byId('plUser').value = playlist.username ?? ''
-    byId('plPass').placeholder = 'senha guardada no Keychain'
+    byId('plPass').placeholder = 'senha guardada localmente'
   }
   const invoke = tauriInvoke()
   if (!invoke) return
@@ -508,6 +508,7 @@ async function bootSeed() {
     password,
   })
   await saveSecret(playlist.id, password)
+  errorText = ''
   await hydrateSettingsForm(playlist)
   client = createXtreamClient({
     playlist,
@@ -519,21 +520,20 @@ async function bootSeed() {
 }
 
 async function bootSaved() {
-  const [saved] = store.list()
-  if (!saved || saved.kind !== 'xc') return false
-  const password = saved.password ?? (await readSecret(saved.id))
-  if (!password) {
-    errorText = 'Playlist salva sem senha no Keychain: cadastre de novo.'
-    return false
+  for (const saved of store.list()) {
+    if (saved.kind !== 'xc') continue
+    const password = saved.password ?? (await readSecret(saved.id))
+    if (!password) continue
+    client = createXtreamClient({
+      playlist: saved.password ? saved : restorePlaylist(saved, password),
+      fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
+    })
+    await hydrateSettingsForm(saved)
+    shell = createTvShell()
+    render()
+    return true
   }
-  client = createXtreamClient({
-    playlist: saved.password ? saved : restorePlaylist(saved, password),
-    fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
-  })
-  await hydrateSettingsForm(saved)
-  shell = createTvShell()
-  render()
-  return true
+  return false
 }
 
 async function boot() {
@@ -541,7 +541,11 @@ async function boot() {
   byId('demoBtn').addEventListener('click', bootDemo)
   byId('discoverBtn').addEventListener('click', discover)
   byId('playlistForm').addEventListener('submit', savePlaylist)
-  if (!(await bootSaved()) && !(await bootSeed())) bootDemo()
+  if (await bootSaved()) return
+  if (await bootSeed()) return
+  bootDemo()
+  if (store.list().length > 0) errorText = 'Playlist salva sem senha guardada: cadastre de novo.'
+  render()
 }
 
 boot()
