@@ -36,14 +36,17 @@ test('acha o portal que aceita as credenciais', async () => {
   assert.equal(found.user.username, user.username)
 })
 
-test('devolve null quando nenhum portal aceita', async () => {
+test('sem portal válido devolve motivo por tentativa', async () => {
+  const portal = `http://${faker.internet.domainName()}`
   const found = await discoverPortal({
-    candidates: [`http://${faker.internet.domainName()}`],
+    candidates: [portal],
     username: 'u',
     password: 'p',
     fetch: async () => ({ ok: true, status: 200, json: async () => ({ user_info: { auth: 0 } }) }),
   })
-  assert.equal(found, null)
+  assert.equal(found.portal, null)
+  assert.equal(found.attempts.length, 1)
+  assert.match(found.attempts[0].error, /auth/)
 })
 
 test('ignora candidato inválido e repetido', async () => {

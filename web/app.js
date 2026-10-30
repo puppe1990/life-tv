@@ -403,8 +403,10 @@ async function discover() {
       password: byId('plPass').value,
       fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
     })
-    if (!found) {
-      errorText = 'Nenhum portal aceitou essas credenciais.'
+    if (!found.portal) {
+      const first = found.attempts.find((item) => item.error)
+      const motivo = first ? `${first.portal}: ${first.error}` : 'sem resposta'
+      errorText = `Nenhum portal aceitou (${found.attempts.length} tentativas). ${motivo}`
     } else {
       byId('plPortal').value = found.portal
       errorText = `Portal encontrado: ${found.portal}`
