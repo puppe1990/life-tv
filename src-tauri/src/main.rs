@@ -5,17 +5,25 @@ use std::process::Command;
 const KEYCHAIN_SERVICE: &str = "life-tv";
 
 /// Abre a URL no mpv (MPEG-TS/MKV que o webview não toca).
+/// Sem mpv, cai no IINA (também mpv por baixo) via `open -a`.
 #[tauri::command]
 fn play_sidecar(url: String) -> Result<(), String> {
     if !(url.starts_with("http://") || url.starts_with("https://")) {
         return Err(format!("url recusada: recebido {url}, esperado http(s)"));
     }
-    Command::new("mpv")
+    if Command::new("mpv")
         .arg("--fs")
         .arg(&url)
         .spawn()
-        .map(|_| ())
-        .map_err(|error| format!("mpv recusado: {error}"))
+        .is_ok()
+    {
+        return Ok(());
+    }
+    let iina = Command::new("open").args(["-a", "IINA", &url]).status();
+    match iina {
+        Ok(status) if status.success() => Ok(()),
+        _ => Err("sem player externo: instale mpv (brew install mpv) ou IINA".to_string()),
+    }
 }
 
 fn keychain_entry(account: &str) -> Result<keyring::Entry, String> {
