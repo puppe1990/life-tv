@@ -62,12 +62,29 @@
               class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
             />
           </label>
+          <label class="grid gap-2 text-[20px] text-mute"
+            >Portais para descobrir (um por linha)
+            <textarea
+              id="plCandidates"
+              name="candidates"
+              rows="3"
+              placeholder="http://servidor-a.com&#10;http://servidor-b.com"
+              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+            ></textarea>
+          </label>
           <div class="flex gap-4">
             <button
               type="submit"
               class="cursor-pointer border-2 border-brass bg-transparent px-[22px] py-3.5 font-sans text-2xl text-brass"
             >
               Guardar XC
+            </button>
+            <button
+              type="button"
+              id="discoverBtn"
+              class="cursor-pointer border-2 border-brass bg-transparent px-[22px] py-3.5 font-sans text-2xl text-brass"
+            >
+              Descobrir portal
             </button>
             <button
               type="button"

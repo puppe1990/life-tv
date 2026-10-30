@@ -18,6 +18,7 @@ import {
   playerUrlClass,
   tileClass,
 } from '../src/tvSkin.mjs'
+import { discoverPortal } from '../src/discoverPortal.mjs'
 import { createJsonBucket } from '../src/jsonBucket.mjs'
 import { redactPlaylist, restorePlaylist } from '../src/playlistSecret.mjs'
 import { resolvePlayerSource } from '../src/playerSource.mjs'
@@ -388,6 +389,32 @@ async function savePlaylist(event) {
   }
 }
 
+async function discover() {
+  const typed = byId('plCandidates')
+    .value.split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const saved = store.list().map((item) => item.portal)
+  const candidates = typed.length ? typed : saved
+  try {
+    const found = await discoverPortal({
+      candidates,
+      username: byId('plUser').value,
+      password: byId('plPass').value,
+      fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
+    })
+    if (!found) {
+      errorText = 'Nenhum portal aceitou essas credenciais.'
+    } else {
+      byId('plPortal').value = found.portal
+      errorText = `Portal encontrado: ${found.portal}`
+    }
+  } catch (err) {
+    errorText = err.message
+  }
+  render()
+}
+
 async function bootSaved() {
   const [saved] = store.list()
   if (!saved || saved.kind !== 'xc') return false
@@ -408,6 +435,7 @@ async function bootSaved() {
 async function boot() {
   document.addEventListener('keydown', onKey)
   byId('demoBtn').addEventListener('click', bootDemo)
+  byId('discoverBtn').addEventListener('click', discover)
   byId('playlistForm').addEventListener('submit', savePlaylist)
   if (!(await bootSaved())) bootDemo()
 }
