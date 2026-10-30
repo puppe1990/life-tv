@@ -19,11 +19,13 @@ function settle() {
   return new Promise((resolve) => setTimeout(resolve, 50))
 }
 
-test('demo pré-carrega o catálogo e destaca o primeiro canal', async () => {
+test('demo pré-carrega o catálogo e destaca o primeiro filme', async () => {
   startDemo()
   await settle()
-  assert.equal(state.featured.kind, 'live')
-  assert.equal(state.featured.name, 'TV Cultura')
+  assert.equal(state.featured.kind, 'movies')
+  assert.equal(state.featured.name, 'O Demônio e a Srta. Prym')
+  assert.match(state.featured.plot, /forasteiro/)
+  assert.equal(state.featured.year, '2026')
 })
 
 test('demo começa na home com o cliente pronto', () => {

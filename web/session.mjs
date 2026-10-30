@@ -74,10 +74,18 @@ export async function withRotation(run) {
   }
 }
 
-/** Guarda o primeiro item do catálogo como destaque da home. */
+/** Guarda o primeiro item do catálogo como destaque e enriquece filmes. */
 export function featureFirst(kind, catalog) {
   const item = catalog?.categories?.[0]?.items?.[0]
-  if (item) state.featured = { kind, name: item.name, id: item.id }
+  if (!item) return
+  state.featured = { kind, name: item.name, id: item.id, icon: item.icon ?? '' }
+  if (kind !== 'movies') return
+  withRotation(() => state.client.vodInfo(item.id))
+    .then((info) => {
+      state.featured = { ...state.featured, ...info, name: info.title || item.name }
+      state.redraw()
+    })
+    .catch(() => {})
 }
 
 /** Carrega o catálogo com rotação de portal. */
@@ -99,9 +107,9 @@ export function startDemo() {
   state.shell = createTvShell()
   state.redraw()
   state.client
-    .liveCatalog()
+    .vodCatalog()
     .then((catalog) => {
-      featureFirst('live', catalog)
+      featureFirst('movies', catalog)
       state.redraw()
     })
     .catch(() => {})

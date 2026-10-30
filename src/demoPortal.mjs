@@ -91,6 +91,19 @@ export function createDemoFetch() {
         ],
       },
     },
+    vodInfo: {
+      301: {
+        info: {
+          name: 'O Demônio e a Srta. Prym',
+          plot: 'Um forasteiro chega a uma cidade pequena oferecendo dinheiro em troca de uma escolha impossível.',
+          releasedate: '2026-03-12',
+          rating: '7.4',
+          genre: 'Drama',
+          movie_image: '',
+        },
+        movie_data: { name: 'O Demônio e a Srta. Prym', stream_id: 301 },
+      },
+    },
     seriesInfo: {
       401: {
         episodes: {
