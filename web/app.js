@@ -18,12 +18,27 @@ import {
   playerUrlClass,
   tileClass,
 } from '../src/tvSkin.mjs'
+import { createJsonBucket } from '../src/jsonBucket.mjs'
+import { resolvePlayerSource } from '../src/playerSource.mjs'
+import { createResumeStore } from '../src/resumeStore.mjs'
 import { createXtreamClient } from '../src/xtreamClient.mjs'
 
 const store = createPlaylistStore()
 let shell = createTvShell()
 let client = demoClient()
 let errorText = ''
+
+function localStore() {
+  try {
+    return globalThis.localStorage ?? null
+  } catch {
+    return null
+  }
+}
+
+const resumeStore = createResumeStore({
+  bucket: createJsonBucket({ storage: localStore(), key: 'life-tv:resume' }),
+})
 
 function demoClient() {
   return createXtreamClient({ playlist: DEMO_PLAYLIST, fetch: createDemoFetch() })
@@ -98,20 +113,68 @@ function renderCatalog() {
   root.replaceChildren(cats, items)
 }
 
+function streamIdOf(item) {
+  return item ? String(item.id) : ''
+}
+
+function seekResume(video, item) {
+  const saved = resumeStore.load(streamIdOf(item))
+  if (saved) video.currentTime = saved.positionMs / 1000
+}
+
+function saveResume(video, item) {
+  if (!Number.isFinite(video.duration)) return
+  resumeStore.save({
+    streamId: streamIdOf(item),
+    positionMs: Math.round(video.currentTime * 1000),
+    durationMs: Math.round(video.duration * 1000),
+  })
+}
+
+function playerVideo(url, item) {
+  const video = document.createElement('video')
+  video.className = 'w-full border-2 border-line bg-black'
+  video.controls = true
+  video.playsInline = true
+  const source = resolvePlayerSource(url, { canPlay: (type) => video.canPlayType(type) })
+  if (source.kind === 'hls' || source.kind === 'progressive') {
+    video.src = source.url
+    video.addEventListener('loadedmetadata', () => seekResume(video, item))
+    video.addEventListener('timeupdate', () => saveResume(video, item))
+  }
+  return { video, source }
+}
+
+function playerNote(source) {
+  if (source.kind === 'hls') return 'HLS nativo do webview'
+  if (source.kind === 'progressive') return 'MP4 progressivo'
+  return source.reason
+}
+
 function renderPlayer() {
   const root = byId('player')
   root.hidden = shell.screen !== 'player'
   if (shell.screen !== 'player') return
+  const url = playUrl()
+  const item = shell.selectedItem
   const title = document.createElement('h1')
   title.className = playerTitleClass()
-  title.textContent = shell.selectedItem?.name ?? 'Sem título'
+  title.textContent = item?.name ?? 'Sem título'
   const note = document.createElement('p')
   note.className = playerNoteClass()
-  note.textContent = 'URL montada localmente. O sidecar mpv entra no Tauri.'
   const code = document.createElement('code')
   code.className = playerUrlClass()
-  code.textContent = playUrl()
-  root.replaceChildren(title, note, code)
+  code.textContent = url
+  const nodes = [title]
+  if (url) {
+    const { video, source } = playerVideo(url, item)
+    nodes.push(video)
+    note.textContent = playerNote(source)
+  } else {
+    note.textContent = 'Séries ainda sem player'
+  }
+  nodes.push(note, code)
+  root.replaceChildren(...nodes)
 }
 
 function renderSettings() {
