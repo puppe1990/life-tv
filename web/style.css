@@ -380,6 +380,9 @@
   .pb-\[72px\] {
     padding-bottom: 72px;
   }
+  .pl-1 {
+    padding-left: var(--spacing);
+  }
   .pl-2 {
     padding-left: calc(var(--spacing) * 2);
   }

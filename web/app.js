@@ -19,6 +19,7 @@ import {
   tileClass,
 } from '../src/tvSkin.mjs'
 import { createJsonBucket } from '../src/jsonBucket.mjs'
+import { redactPlaylist, restorePlaylist } from '../src/playlistSecret.mjs'
 import { resolvePlayerSource } from '../src/playerSource.mjs'
 import { createResumeStore } from '../src/resumeStore.mjs'
 import { createXtreamClient } from '../src/xtreamClient.mjs'
@@ -26,6 +27,32 @@ import { createXtreamClient } from '../src/xtreamClient.mjs'
 let shell = createTvShell()
 let client = demoClient()
 let errorText = ''
+
+function tauriInvoke() {
+  const invoke = globalThis.__TAURI__?.core?.invoke
+  return typeof invoke === 'function' ? invoke : null
+}
+
+async function saveSecret(account, value) {
+  const invoke = tauriInvoke()
+  if (!invoke) return false
+  try {
+    await invoke('secret_set', { account, value })
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function readSecret(account) {
+  const invoke = tauriInvoke()
+  if (!invoke) return null
+  try {
+    return await invoke('secret_get', { account })
+  } catch {
+    return null
+  }
+}
 
 function tauriFetch() {
   const http = globalThis.__TAURI__?.http
@@ -40,8 +67,17 @@ function localStore() {
   }
 }
 
+const playlistsBucket = createJsonBucket({ storage: localStore(), key: 'life-tv:playlists' })
+
 const store = createPlaylistStore({
-  bucket: createJsonBucket({ storage: localStore(), key: 'life-tv:playlists' }),
+  bucket: {
+    read() {
+      return playlistsBucket.read()
+    },
+    write(items) {
+      playlistsBucket.write(tauriInvoke() ? items.map(redactPlaylist) : items)
+    },
+  },
 })
 
 const resumeStore = createResumeStore({
@@ -328,7 +364,7 @@ function bootDemo() {
   render()
 }
 
-function savePlaylist(event) {
+async function savePlaylist(event) {
   event.preventDefault()
   try {
     const playlist = store.add({
@@ -338,11 +374,12 @@ function savePlaylist(event) {
       username: byId('plUser').value,
       password: byId('plPass').value,
     })
+    const stored = await saveSecret(playlist.id, playlist.password)
     client = createXtreamClient({
       playlist,
       fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
     })
-    errorText = ''
+    errorText = stored ? '' : 'Senha não foi pro Keychain: será pedida a cada abertura.'
     shell = createTvShell()
     render()
   } catch (err) {
@@ -351,11 +388,16 @@ function savePlaylist(event) {
   }
 }
 
-function bootSaved() {
+async function bootSaved() {
   const [saved] = store.list()
   if (!saved || saved.kind !== 'xc') return false
+  const password = saved.password ?? (await readSecret(saved.id))
+  if (!password) {
+    errorText = 'Playlist salva sem senha no Keychain: cadastre de novo.'
+    return false
+  }
   client = createXtreamClient({
-    playlist: saved,
+    playlist: saved.password ? saved : restorePlaylist(saved, password),
     fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
   })
   shell = createTvShell()
@@ -363,11 +405,11 @@ function bootSaved() {
   return true
 }
 
-function boot() {
+async function boot() {
   document.addEventListener('keydown', onKey)
   byId('demoBtn').addEventListener('click', bootDemo)
   byId('playlistForm').addEventListener('submit', savePlaylist)
-  if (!bootSaved()) bootDemo()
+  if (!(await bootSaved())) bootDemo()
 }
 
 boot()
