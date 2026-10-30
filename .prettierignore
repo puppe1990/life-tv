@@ -1,3 +1,6 @@
 node_modules
 package-lock.json
 web/style.css
+.tauri-dist
+src-tauri/target
+src-tauri/gen

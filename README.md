@@ -10,6 +10,8 @@ npm test            # node --test + @faker-js/faker
 npm run css         # Tailwind CLI → web/style.css (tokens CRT em web/input.css)
 npm run ci          # css + prettier + lint + test
 npm run dev         # css + http://127.0.0.1:8792/web/
+npm run tauri:dist  # junta web/ + src/ em .tauri-dist (frontendDist do Tauri)
+npm run tauri:dev   # janela Tauri 2 em 1920x1080 com o front embutido
 ```
 
 Repo: https://github.com/puppe1990/life-tv

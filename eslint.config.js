@@ -4,7 +4,7 @@ import prettier from 'eslint-config-prettier'
 
 export default [
   {
-    ignores: ['node_modules/**', 'package-lock.json'],
+    ignores: ['node_modules/**', 'package-lock.json', '.tauri-dist/**', 'src-tauri/target/**'],
   },
   js.configs.recommended,
   {

@@ -2,3 +2,6 @@ node_modules/
 .DS_Store
 
 .reverse/
+.tauri-dist/
+src-tauri/target/
+src-tauri/gen/
