@@ -1,5 +1,11 @@
 import { createFakeXtreamPortal } from './fakeXtreamPortal.mjs'
 
+/** base64 do texto: btoa no navegador, Buffer no Node. */
+function base64(text) {
+  if (typeof btoa === 'function') return btoa(text)
+  return Buffer.from(text, 'utf8').toString('base64')
+}
+
 export const DEMO_PLAYLIST = {
   kind: 'xc',
   name: 'Demo local',
@@ -71,5 +77,26 @@ export function createDemoFetch() {
     ],
     seriesCategories: [{ category_id: '4', category_name: 'Drama', parent_id: 0 }],
     series: [{ series_id: 401, name: 'Capitães da Areia', category_id: '4', cover: '' }],
+    shortEpg: {
+      101: {
+        epg_listings: [
+          {
+            id: 1,
+            title: base64('Jornal da Cultura'),
+            description: base64('Notícias do dia'),
+            start: '2026-10-30 12:00:00',
+            end: '2026-10-30 13:00:00',
+            has_archive: 1,
+          },
+        ],
+      },
+    },
+    seriesInfo: {
+      401: {
+        episodes: {
+          1: [{ id: 9001, episode_num: 1, title: 'Primeiro', container_extension: 'mp4' }],
+        },
+      },
+    },
   })
 }

@@ -73,14 +73,19 @@ export async function withRotation(run) {
   }
 }
 
+/** Guarda o primeiro item do catálogo como destaque da home. */
+export function featureFirst(kind, catalog) {
+  const item = catalog?.categories?.[0]?.items?.[0]
+  if (item) state.featured = { kind, name: item.name, id: item.id }
+}
+
 /** Carrega o catálogo com rotação de portal. */
 export async function fillCatalog() {
   try {
     clearError()
-    state.shell = bindCatalog(
-      state.shell,
-      await withRotation(() => catalogFor(state.shell.catalogKind)),
-    )
+    const catalog = await withRotation(() => catalogFor(state.shell.catalogKind))
+    featureFirst(state.shell.catalogKind, catalog)
+    state.shell = bindCatalog(state.shell, catalog)
   } catch (error) {
     setError(error.message)
   }
@@ -92,6 +97,13 @@ export function startDemo() {
   clearError()
   state.shell = createTvShell()
   state.redraw()
+  state.client
+    .liveCatalog()
+    .then((catalog) => {
+      featureFirst('live', catalog)
+      state.redraw()
+    })
+    .catch(() => {})
 }
 
 /** Valida, guarda e ativa a playlist do formulário. */

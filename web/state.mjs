@@ -6,6 +6,7 @@ export const state = {
   client: null,
   errorText: '',
   series: { key: '', url: '' },
+  featured: null,
   epg: { key: '', listings: [] },
   redraw: () => {},
 }

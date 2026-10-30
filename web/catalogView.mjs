@@ -26,11 +26,36 @@ const TAB_SCREENS = {
 }
 
 /** Home, abas e catálogo em três colunas (categorias, itens, detalhe). */
+
+const FEATURED_KIND = { live: 'Ao vivo', movies: 'Filme', series: 'Série' }
+
+function renderFeatured() {
+  const featured = state.featured
+  if (!featured) return []
+  const card = el('article', 'flex items-center gap-8 border border-line bg-panel p-8')
+  card.append(el('div', 'h-[180px] w-[130px] border border-line bg-well'))
+  const info = el('div', 'grid gap-3')
+  info.append(el('h2', 'm-0 text-[40px] font-semibold', featured.name))
+  info.append(
+    el(
+      'span',
+      'w-fit bg-accent px-3 py-1 text-[18px] text-void',
+      FEATURED_KIND[featured.kind] ?? '',
+    ),
+  )
+  info.append(
+    el('p', 'm-0 max-w-[70ch] text-[20px] text-mute', `#${featured.id} · visto no catálogo`),
+  )
+  card.append(info)
+  return [card]
+}
+
 export function renderHome() {
   const root = byId('home')
   root.hidden = state.shell.screen !== 'home'
   if (root.hidden) return
-  root.replaceChildren(
+  const tiles = el('div', 'grid grid-cols-[repeat(4,minmax(200px,1fr))] gap-6')
+  tiles.append(
     ...HOME_TILES.map((tile) => {
       const button = el('button', tileClass(tile.id === state.shell.homeId), tile.label)
       button.type = 'button'
@@ -39,6 +64,7 @@ export function renderHome() {
       return button
     }),
   )
+  root.replaceChildren(...renderFeatured(), tiles)
 }
 
 /** Marca a aba ativa pelo estado atual. */
