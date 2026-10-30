@@ -454,6 +454,48 @@ async function discover() {
   render()
 }
 
+async function bootSeed() {
+  const invoke = tauriInvoke()
+  if (!invoke) return false
+  let raw
+  try {
+    raw = await invoke('seed_read')
+  } catch {
+    return false
+  }
+  if (!raw) return false
+  let seed
+  try {
+    seed = JSON.parse(raw)
+  } catch {
+    return false
+  }
+  if (!seed || !seed.username) return false
+  if (Array.isArray(seed.candidates)) {
+    byId('plCandidates').value = seed.candidates.join('\n')
+  }
+  byId('plName').value = seed.name ?? ''
+  byId('plPortal').value = seed.portal ?? ''
+  byId('plUser').value = seed.username ?? ''
+  const password = await readSecret('seed')
+  if (!password) return false
+  const playlist = store.add({
+    kind: 'xc',
+    name: seed.name ?? 'Casa',
+    portal: seed.portal,
+    username: seed.username,
+    password,
+  })
+  await saveSecret(playlist.id, password)
+  client = createXtreamClient({
+    playlist,
+    fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
+  })
+  shell = createTvShell()
+  render()
+  return true
+}
+
 async function bootSaved() {
   const [saved] = store.list()
   if (!saved || saved.kind !== 'xc') return false
@@ -476,7 +518,7 @@ async function boot() {
   byId('demoBtn').addEventListener('click', bootDemo)
   byId('discoverBtn').addEventListener('click', discover)
   byId('playlistForm').addEventListener('submit', savePlaylist)
-  if (!(await bootSaved())) bootDemo()
+  if (!(await bootSaved()) && !(await bootSeed())) bootDemo()
 }
 
 boot()
