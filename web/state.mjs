@@ -10,15 +10,18 @@ export const state = {
   redraw: () => {},
 }
 
+/** Registra a função de redesenho (renderAll). */
 export function setRedraw(redraw) {
   state.redraw = redraw
 }
 
+/** Publica a mensagem de erro e redesenha. */
 export function setError(text) {
   state.errorText = text
   state.redraw()
 }
 
+/** Limpa a mensagem de erro sem redesenhar. */
 export function clearError() {
   state.errorText = ''
 }

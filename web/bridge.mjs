@@ -4,11 +4,13 @@ export function tauriInvoke() {
   return typeof invoke === 'function' ? invoke : null
 }
 
+/** Retorna o fetch nativo do Tauri (sem CORS) ou null. */
 export function tauriFetch() {
   const http = globalThis.__TAURI__?.http
   return typeof http?.fetch === 'function' ? http.fetch : null
 }
 
+/** localStorage protegido contra acesso negado. */
 export function localStore() {
   try {
     return globalThis.localStorage ?? null
@@ -17,10 +19,12 @@ export function localStore() {
   }
 }
 
+/** fetch do shell quando existe, senão o global. */
 export function webFetch() {
   return tauriFetch() ?? globalThis.fetch.bind(globalThis)
 }
 
+/** Grava a senha no cofre local; false quando não há shell. */
 export async function saveSecret(account, value) {
   const invoke = tauriInvoke()
   if (!invoke) return false
@@ -32,6 +36,7 @@ export async function saveSecret(account, value) {
   }
 }
 
+/** Lê a senha do cofre local; null quando ausente. */
 export async function readSecret(account) {
   const invoke = tauriInvoke()
   if (!invoke) return null

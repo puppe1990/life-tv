@@ -17,10 +17,13 @@ const secretlessBucket = {
   },
 }
 
+/** Playlists salvas; no Tauri a senha sai do registro. */
 export const playlistStore = createPlaylistStore({ bucket: secretlessBucket })
+/** Favoritos e travas por stream_id, persistidos. */
 export const favStore = createFavLockStore({
   bucket: createJsonBucket({ storage: localStore(), key: 'life-tv:favs' }),
 })
+/** Posição de retomada por stream_id, persistida. */
 export const resumeStore = createResumeStore({
   bucket: createJsonBucket({ storage: localStore(), key: 'life-tv:resume' }),
 })
