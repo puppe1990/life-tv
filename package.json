@@ -23,7 +23,8 @@
     "ci": "npm run css && npm run format:check && npm run lint && npm test",
     "tauri:dist": "node scripts/make-tauri-dist.mjs",
     "tauri:dev": "npm run tauri:dist && cargo run --manifest-path src-tauri/Cargo.toml",
-    "prepare": "husky"
+    "prepare": "husky",
+    "tauri:app": "bash scripts/build-macos-app.sh"
   },
   "lint-staged": {
     "*.{js,mjs}": [

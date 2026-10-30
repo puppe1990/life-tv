@@ -12,6 +12,7 @@ npm run ci          # css + prettier + lint + test
 npm run dev         # css + http://127.0.0.1:8792/web/
 npm run tauri:dist  # junta web/ + src/ em .tauri-dist (frontendDist do Tauri)
 npm run tauri:dev   # janela Tauri 2 em 1920x1080 com o front embutido
+npm run tauri:app   # empacota target-app/Life TV.app (release + codesign ad-hoc)
 ```
 
 Repo: https://github.com/puppe1990/life-tv
