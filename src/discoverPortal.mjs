@@ -1,14 +1,14 @@
 import { parseXtreamLogin } from './parseXtreamLogin.mjs'
 import { normalizePortal, playerApiUrl } from './xtreamUrls.mjs'
 
-/** Tenta um portal: devolve o usuário quando o auth passa, senão null. */
+/** Tenta um portal e devolve usuário ou o motivo da recusa. */
 async function tryPortal(portal, username, password, fetchFn) {
   try {
     const res = await fetchFn(playerApiUrl({ portal, username, password }))
-    if (!res.ok) return null
-    return parseXtreamLogin(await res.json())
-  } catch {
-    return null
+    if (!res.ok) return { portal, error: `HTTP ${res.status}` }
+    return { portal, user: parseXtreamLogin(await res.json()) }
+  } catch (error) {
+    return { portal, error: error?.message ?? String(error) }
   }
 }
 
@@ -23,6 +23,7 @@ export async function discoverPortal({ candidates, username, password, fetch: fe
     throw new Error('descoberta recusada: recebido fetch ausente, esperado função')
   }
   const seen = new Set()
+  const attempts = []
   for (const raw of candidates) {
     let portal
     try {
@@ -32,8 +33,9 @@ export async function discoverPortal({ candidates, username, password, fetch: fe
     }
     if (seen.has(portal)) continue
     seen.add(portal)
-    const user = await tryPortal(portal, username, password, fetchFn)
-    if (user) return { portal, user }
+    const attempt = await tryPortal(portal, username, password, fetchFn)
+    attempts.push(attempt)
+    if (attempt.user) return { portal, user: attempt.user, attempts }
   }
-  return null
+  return { portal: null, user: null, attempts }
 }
