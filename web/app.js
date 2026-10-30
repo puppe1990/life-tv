@@ -40,6 +40,9 @@ const resumeStore = createResumeStore({
   bucket: createJsonBucket({ storage: localStore(), key: 'life-tv:resume' }),
 })
 
+let seriesState = { key: '', url: '' }
+let epgState = { key: '', listings: [] }
+
 function demoClient() {
   return createXtreamClient({ playlist: DEMO_PLAYLIST, fetch: createDemoFetch() })
 }
@@ -60,6 +63,7 @@ function playUrl() {
   if (!item) return ''
   if (shell.catalogKind === 'live') return client.livePlayUrl(item.id)
   if (shell.catalogKind === 'movies') return client.moviePlayUrl(item.id, item.extension)
+  if (shell.catalogKind === 'series' && seriesState.key === String(item.id)) return seriesState.url
   return ''
 }
 
@@ -151,12 +155,105 @@ function playerNote(source) {
   return source.reason
 }
 
+function ensureSeriesUrl(item) {
+  const key = String(item.id)
+  if (seriesState.key === key) return
+  seriesState = { key, url: '' }
+  client
+    .seriesEpisodes(item.id)
+    .then((episodes) => {
+      const first = episodes[0]
+      seriesState = { key, url: first ? client.seriesPlayUrl(first.id, first.extension) : '' }
+    })
+    .catch((err) => {
+      errorText = err.message
+    })
+    .finally(render)
+}
+
+function ensureEpg(item) {
+  const key = String(item.id)
+  if (epgState.key === key) return
+  epgState = { key, listings: [] }
+  client
+    .shortEpg(item.id)
+    .then((listings) => {
+      epgState = { key, listings }
+    })
+    .catch(() => {})
+    .finally(render)
+}
+
+function minutesBetween(start, stop) {
+  const from = new Date(start.replace(' ', 'T')).getTime()
+  const to = new Date(stop.replace(' ', 'T')).getTime()
+  return Math.max(1, Math.round((to - from) / 60_000))
+}
+
+function openCatchUp(item, listing) {
+  try {
+    const url = client.catchUpUrl({
+      streamId: item.id,
+      durationMinutes: minutesBetween(listing.start, listing.stop),
+      start: listing.start,
+    })
+    const video = byId('player').querySelector('video')
+    if (!video) return
+    video.src = url
+    video.play().catch(() => {})
+  } catch (err) {
+    errorText = err.message
+    render()
+  }
+}
+
+function epgBlock(item) {
+  const list = document.createElement('ul')
+  list.className = 'list-none p-0 text-[20px] text-mute'
+  for (const listing of epgState.listings.slice(0, 6)) {
+    const row = document.createElement('li')
+    row.textContent = `${listing.start} · ${listing.title}`
+    if (listing.hasArchive) {
+      const button = document.createElement('button')
+      button.type = 'button'
+      button.className = 'ml-4 cursor-pointer border-2 border-brass px-2 text-brass'
+      button.textContent = 'Assistir do início'
+      button.addEventListener('click', () => openCatchUp(item, listing))
+      row.append(button)
+    }
+    list.append(row)
+  }
+  return list
+}
+
+function sidecarButton(url) {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'cursor-pointer border-2 border-brass px-4 py-2 text-2xl text-brass'
+  button.textContent = 'Abrir no mpv'
+  button.addEventListener('click', () => openSidecar(url))
+  return button
+}
+
+function openSidecar(url) {
+  const invoke = globalThis.__TAURI__?.core?.invoke
+  if (typeof invoke !== 'function') {
+    errorText = 'mpv só existe no shell Tauri'
+    render()
+    return
+  }
+  invoke('play_sidecar', { url }).catch((err) => {
+    errorText = `mpv recusou: ${err}`
+    render()
+  })
+}
+
 function renderPlayer() {
   const root = byId('player')
   root.hidden = shell.screen !== 'player'
   if (shell.screen !== 'player') return
-  const url = playUrl()
   const item = shell.selectedItem
+  const url = playUrl()
   const title = document.createElement('h1')
   title.className = playerTitleClass()
   title.textContent = item?.name ?? 'Sem título'
@@ -168,10 +265,18 @@ function renderPlayer() {
   const nodes = [title]
   if (url) {
     const { video, source } = playerVideo(url, item)
-    nodes.push(video)
+    if (source.kind === 'hls' || source.kind === 'progressive') nodes.push(video)
+    if (source.kind === 'sidecar') nodes.push(sidecarButton(url))
     note.textContent = playerNote(source)
+  } else if (shell.catalogKind === 'series') {
+    ensureSeriesUrl(item)
+    note.textContent = 'Carregando episódios…'
   } else {
-    note.textContent = 'Séries ainda sem player'
+    note.textContent = 'Sem URL para este item'
+  }
+  if (shell.catalogKind === 'live' && item) {
+    ensureEpg(item)
+    if (epgState.listings.length) nodes.push(epgBlock(item))
   }
   nodes.push(note, code)
   root.replaceChildren(...nodes)

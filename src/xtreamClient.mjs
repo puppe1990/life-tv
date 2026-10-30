@@ -1,14 +1,38 @@
 import { mapCatalog } from './mapCatalog.mjs'
+import { flattenEpisodes } from './parseSeriesInfo.mjs'
+import { parseShortEpg } from './parseShortEpg.mjs'
+import { parseXmltv } from './parseXmltv.mjs'
 import { parseXtreamLogin } from './parseXtreamLogin.mjs'
-import { liveStreamUrl, movieStreamUrl, playerApiUrl } from './xtreamUrls.mjs'
+import {
+  liveStreamUrl,
+  movieStreamUrl,
+  playerApiUrl,
+  seriesStreamUrl,
+  timeshiftUrl,
+  xmltvUrl,
+} from './xtreamUrls.mjs'
 
-async function getJson(fetchFn, cred, action) {
-  const url = playerApiUrl({ ...cred, action })
+async function getJson(fetchFn, cred, action, params = null) {
+  const url = playerApiUrl({ ...cred, action, params })
   const res = await fetchFn(url)
   if (!res.ok) {
     throw new Error(`xtream recusado: recebido HTTP ${res.status} em ${url}, esperado 200`)
   }
   return res.json()
+}
+
+async function getText(fetchFn, url) {
+  const res = await fetchFn(url)
+  if (!res.ok) {
+    throw new Error(`xtream recusado: recebido HTTP ${res.status} em ${url}, esperado 200`)
+  }
+  return res.text()
+}
+
+function decodeBase64Text(value) {
+  if (typeof Buffer !== 'undefined') return Buffer.from(value, 'base64').toString('utf8')
+  const binary = globalThis.atob(value)
+  return new TextDecoder().decode(Uint8Array.from(binary, (char) => char.charCodeAt(0)))
 }
 
 function credOf(playlist) {
@@ -58,6 +82,23 @@ export function createXtreamClient({ playlist, fetch: fetchFn }) {
     },
     moviePlayUrl(streamId, extension) {
       return movieStreamUrl({ ...cred, streamId, extension })
+    },
+    seriesPlayUrl(episodeId, extension) {
+      return seriesStreamUrl({ ...cred, episodeId, extension })
+    },
+    async seriesEpisodes(seriesId) {
+      const payload = await getJson(fetchFn, cred, 'get_series_info', { series_id: seriesId })
+      return flattenEpisodes(payload)
+    },
+    async shortEpg(streamId) {
+      const payload = await getJson(fetchFn, cred, 'get_short_epg', { stream_id: streamId })
+      return parseShortEpg(payload, { decodeBase64: decodeBase64Text })
+    },
+    async epg() {
+      return parseXmltv(await getText(fetchFn, xmltvUrl(cred)))
+    },
+    catchUpUrl({ streamId, durationMinutes, start }) {
+      return timeshiftUrl({ ...cred, streamId, durationMinutes, start })
     },
   }
 }

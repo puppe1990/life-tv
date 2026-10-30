@@ -6,6 +6,9 @@ import {
   normalizePortal,
   playerApiUrl,
   seriesStreamUrl,
+  timeshiftStart,
+  timeshiftUrl,
+  xmltvUrl,
   xcGetPhpUrl,
 } from '../src/xtreamUrls.mjs'
 import { faker, fakerPassword, fakerPortal, fakerUsername, fakerVodStream } from './factories.mjs'
@@ -86,5 +89,48 @@ test('seriesStreamUrl usa series/user/pass/id.ext', () => {
   assert.equal(
     seriesStreamUrl({ portal, username, password, episodeId, extension }),
     `${portal}/series/${encodeURIComponent(username)}/${encodeURIComponent(password)}/${episodeId}.${extension}`,
+  )
+})
+
+test('xmltvUrl usa xmltv.php com as credenciais', () => {
+  const portal = `http://${faker.internet.domainName()}:8080`
+  const username = faker.internet.username()
+  const password = faker.internet.password()
+  assert.equal(
+    xmltvUrl({ portal, username, password }),
+    `${portal}/xmltv.php?username=${username}&password=${password}`,
+  )
+})
+
+test('timeshiftUrl normaliza o start do Xtream', () => {
+  const portal = `http://${faker.internet.domainName()}`
+  const streamId = faker.number.int({ min: 100, max: 999 })
+  const url = timeshiftUrl({
+    portal,
+    username: 'u',
+    password: 'p',
+    streamId,
+    durationMinutes: 120,
+    start: '2026-10-30 12:00:00',
+  })
+  assert.equal(url, `${portal}/timeshift/u/p/120/2026-10-30:12-00/${streamId}.ts`)
+})
+
+test('timeshiftStart recusa formato desconhecido', () => {
+  assert.throws(() => timeshiftStart('ontem'), /start recusado/)
+})
+
+test('timeshiftUrl recusa duração inválida', () => {
+  assert.throws(
+    () =>
+      timeshiftUrl({
+        portal: 'http://h',
+        username: 'u',
+        password: 'p',
+        streamId: 1,
+        durationMinutes: 0,
+        start: '2026-10-30 12:00:00',
+      }),
+    /duração recusada/,
   )
 })
