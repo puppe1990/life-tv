@@ -1,6 +1,6 @@
 import { xcGetPhpUrl } from './xtreamUrls.mjs'
 
-/** Copia da playlist sem senha nem get.php (a senha vai pro Keychain). */
+/** Copia da playlist sem senha nem get.php (a senha vai pro cofre local 0600). */
 export function redactPlaylist(playlist) {
   if (!playlist || playlist.kind !== 'xc') return playlist
   const { password: _password, getPhpUrl: _getPhpUrl, ...rest } = playlist
@@ -12,7 +12,7 @@ export function restorePlaylist(stored, password) {
   if (!stored || stored.kind !== 'xc') return stored
   if (typeof password !== 'string' || password === '') {
     throw new Error(
-      `senha recusada: recebido ${JSON.stringify(password)}, esperado texto do Keychain`,
+      `senha recusada: recebido ${JSON.stringify(password)}, esperado texto do cofre local`,
     )
   }
   return {
