@@ -87,3 +87,11 @@ export function timeshiftUrl({ portal, username, password, streamId, durationMin
   const { user, pass } = encodeCred(username, password)
   return `${base}/timeshift/${user}/${pass}/${durationMinutes}/${normalized}/${streamId}.ts`
 }
+
+const SECRET_QUERY = /((?:password|jwt)=)[^&]*/gi
+
+/** Mascara senha e jwt em qualquer URL exibida ou logada. */
+export function redactUrl(url) {
+  if (typeof url !== 'string') return url
+  return url.replace(SECRET_QUERY, '$1***')
+}

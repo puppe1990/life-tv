@@ -7,6 +7,7 @@ import {
   liveStreamUrl,
   movieStreamUrl,
   playerApiUrl,
+  redactUrl,
   seriesStreamUrl,
   timeshiftUrl,
   xmltvUrl,
@@ -16,7 +17,9 @@ async function getJson(fetchFn, cred, action, params = null) {
   const url = playerApiUrl({ ...cred, action, params })
   const res = await fetchFn(url)
   if (!res.ok) {
-    throw new Error(`xtream recusado: recebido HTTP ${res.status} em ${url}, esperado 200`)
+    throw new Error(
+      `xtream recusado: recebido HTTP ${res.status} em ${redactUrl(url)}, esperado 200`,
+    )
   }
   return res.json()
 }
@@ -24,7 +27,9 @@ async function getJson(fetchFn, cred, action, params = null) {
 async function getText(fetchFn, url) {
   const res = await fetchFn(url)
   if (!res.ok) {
-    throw new Error(`xtream recusado: recebido HTTP ${res.status} em ${url}, esperado 200`)
+    throw new Error(
+      `xtream recusado: recebido HTTP ${res.status} em ${redactUrl(url)}, esperado 200`,
+    )
   }
   return res.text()
 }
