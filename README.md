@@ -32,3 +32,4 @@ Home 10-foot: **Ao vivo / Filmes / Séries / Ajustes**. Setas e Enter. Demo loca
 ## Fora
 
 - Phone-home com MAC, `libhax` / VPN, dump de chaves, streams que não são da playlist do usuário
+- Arte do ícone/logo: pertence ao app de referência, usada só para uso local
