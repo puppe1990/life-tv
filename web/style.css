@@ -239,6 +239,9 @@
   .hidden {
     display: none;
   }
+  .h-11 {
+    height: calc(var(--spacing) * 11);
+  }
   .h-\[180px\] {
     height: 180px;
   }
@@ -253,6 +256,9 @@
   }
   .min-h-\[560px\] {
     min-height: 560px;
+  }
+  .w-11 {
+    width: calc(var(--spacing) * 11);
   }
   .w-\[130px\] {
     width: 130px;
