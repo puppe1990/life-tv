@@ -6,7 +6,9 @@ APP_DIR="$ROOT/target-app"
 APP="$APP_DIR/Life TV.app"
 VERSION="$(node -p "require('$ROOT/package.json').version")"
 
-npm --prefix "$ROOT" run tauri:dist
+if [ "${SKIP_DIST:-0}" != "1" ]; then
+  npm --prefix "$ROOT" run tauri:dist
+fi
 cargo build --release --manifest-path "$ROOT/src-tauri/Cargo.toml"
 
 rm -rf "$APP"

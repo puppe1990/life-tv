@@ -32,10 +32,13 @@ const FEATURED_KIND = { live: 'Ao vivo', movies: 'Filme', series: 'Série' }
 function renderFeatured() {
   const featured = state.featured
   if (!featured) return []
-  const card = el('article', 'flex items-center gap-8 border border-line bg-panel p-8')
-  card.append(el('div', 'h-[180px] w-[130px] border border-line bg-well'))
+  const card = el(
+    'article',
+    'flex flex-col gap-6 border border-line bg-panel p-5 md:flex-row md:items-center md:gap-8 md:p-8',
+  )
+  card.append(el('div', 'h-[120px] w-[90px] border border-line bg-well md:h-[180px] md:w-[130px]'))
   const info = el('div', 'grid gap-3')
-  info.append(el('h2', 'm-0 text-[40px] font-semibold', featured.name))
+  info.append(el('h2', 'm-0 text-[clamp(22px,2.2vw,40px)] font-semibold', featured.name))
   info.append(
     el(
       'span',
@@ -44,7 +47,11 @@ function renderFeatured() {
     ),
   )
   info.append(
-    el('p', 'm-0 max-w-[70ch] text-[20px] text-mute', `#${featured.id} · visto no catálogo`),
+    el(
+      'p',
+      'm-0 max-w-[70ch] text-[clamp(14px,1vw,20px)] text-mute',
+      `#${featured.id} · visto no catálogo`,
+    ),
   )
   card.append(info)
   return [card]
@@ -54,7 +61,7 @@ export function renderHome() {
   const root = byId('home')
   root.hidden = state.shell.screen !== 'home'
   if (root.hidden) return
-  const tiles = el('div', 'grid grid-cols-[repeat(4,minmax(200px,1fr))] gap-6')
+  const tiles = el('div', 'grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 md:gap-6')
   tiles.append(
     ...HOME_TILES.map((tile) => {
       const button = el('button', tileClass(tile.id === state.shell.homeId), tile.label)
