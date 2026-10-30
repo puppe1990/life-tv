@@ -23,6 +23,7 @@ import { createJsonBucket } from '../src/jsonBucket.mjs'
 import { redactPlaylist, restorePlaylist } from '../src/playlistSecret.mjs'
 import { resolvePlayerSource } from '../src/playerSource.mjs'
 import { createResumeStore } from '../src/resumeStore.mjs'
+import { redactUrl } from '../src/xtreamUrls.mjs'
 import { createXtreamClient } from '../src/xtreamClient.mjs'
 
 let shell = createTvShell()
@@ -343,7 +344,7 @@ function renderPlayer() {
   note.className = playerNoteClass()
   const code = document.createElement('code')
   code.className = playerUrlClass()
-  code.textContent = url
+  code.textContent = redactUrl(url)
   const nodes = [title]
   if (url) {
     const { video, source } = playerVideo(url, item)

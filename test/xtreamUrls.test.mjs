@@ -5,6 +5,7 @@ import {
   movieStreamUrl,
   normalizePortal,
   playerApiUrl,
+  redactUrl,
   seriesStreamUrl,
   timeshiftStart,
   timeshiftUrl,
@@ -133,4 +134,18 @@ test('timeshiftUrl recusa duração inválida', () => {
       }),
     /duração recusada/,
   )
+})
+
+test('redactUrl mascara senha e jwt', () => {
+  const url =
+    'http://h/player_api.php?username=joao&password=segredo123&action=get_live&jwt=abc.def'
+  const safe = redactUrl(url)
+  assert.equal(safe.includes('segredo123'), false)
+  assert.equal(safe.includes('abc.def'), false)
+  assert.match(safe, /username=joao/)
+  assert.match(safe, /password=\*\*\*/)
+})
+
+test('redactUrl devolve valor não-texto sem quebrar', () => {
+  assert.equal(redactUrl(null), null)
 })
