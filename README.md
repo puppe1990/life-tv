@@ -7,8 +7,9 @@ Destino: shell Tauri 2 em landscape 10-foot (Dell). Hoje o núcleo é testável 
 ```bash
 npm ci
 npm test            # node --test + @faker-js/faker
-npm run ci          # prettier + lint + test
-npm run dev         # http://127.0.0.1:8792/web/
+npm run css         # Tailwind CLI → web/style.css (tokens CRT em web/input.css)
+npm run ci          # css + prettier + lint + test
+npm run dev         # css + http://127.0.0.1:8792/web/
 ```
 
 Repo: https://github.com/puppe1990/life-tv

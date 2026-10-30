@@ -13,12 +13,14 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
-    "dev": "python3 -m http.server 8792 --bind 127.0.0.1",
+    "css": "tailwindcss -i web/input.css -o web/style.css",
+    "css:watch": "tailwindcss -i web/input.css -o web/style.css --watch",
+    "dev": "npm run css && python3 -m http.server 8792 --bind 127.0.0.1",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "ci": "npm run format:check && npm run lint && npm test",
+    "ci": "npm run css && npm run format:check && npm run lint && npm test",
     "prepare": "husky"
   },
   "lint-staged": {
@@ -33,11 +35,13 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^10.6.0",
+    "@tailwindcss/cli": "^4.3.3",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.12.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.9.8"
+    "prettier": "^3.9.8",
+    "tailwindcss": "^4.3.3"
   }
 }

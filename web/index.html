@@ -6,35 +6,80 @@
     <title>Life TV</title>
     <link rel="stylesheet" href="./style.css" />
   </head>
-  <body>
-    <main class="stage">
-      <header class="top">
-        <p class="brand">Life TV</p>
-        <p class="hint" id="hint">← → ↑ ↓ · Enter · Esc</p>
+  <body class="font-sans">
+    <main class="grid min-h-screen content-start gap-9 px-[72px] pt-12 pb-[72px]">
+      <header class="flex items-baseline justify-between">
+        <p class="font-display m-0 text-[42px] tracking-[0.28em] text-brass uppercase">Life TV</p>
+        <p id="hint" class="m-0 text-[22px] tracking-[0.08em] text-mute">← → ↑ ↓ · Enter · Esc</p>
       </header>
-      <section id="home" class="rail" aria-label="Início"></section>
-      <section id="catalog" class="board" hidden></section>
-      <section id="player" class="player" hidden></section>
-      <section id="settings" class="desk" hidden>
-        <h1>Ajustes</h1>
-        <p class="lede">Playlist própria. Sem MAC, sem VPN, sem catálogo de terceiros.</p>
-        <form id="playlistForm" class="form">
-          <label>Nome <input id="plName" name="name" autocomplete="off" /></label>
-          <label
-            >Portal <input id="plPortal" name="portal" placeholder="http://servidor:8080"
-          /></label>
-          <label>Usuário <input id="plUser" name="username" autocomplete="off" /></label>
-          <label
+      <section
+        id="home"
+        class="grid grid-cols-[repeat(4,minmax(200px,1fr))] gap-7"
+        aria-label="Início"
+      ></section>
+      <section id="catalog" class="grid min-h-[420px] grid-cols-[280px_1fr] gap-8" hidden></section>
+      <section id="player" class="border-2 border-line bg-panel p-12" hidden></section>
+      <section id="settings" hidden>
+        <h1 class="font-display m-0 mb-2 text-[40px]">Ajustes</h1>
+        <p class="mb-6 max-w-[40ch] text-[22px] text-mute">
+          Playlist própria. Sem MAC, sem VPN, sem catálogo de terceiros.
+        </p>
+        <form id="playlistForm" class="grid max-w-[640px] gap-[18px]">
+          <label class="grid gap-2 text-[20px] text-mute"
+            >Nome
+            <input
+              id="plName"
+              name="name"
+              autocomplete="off"
+              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+            />
+          </label>
+          <label class="grid gap-2 text-[20px] text-mute"
+            >Portal
+            <input
+              id="plPortal"
+              name="portal"
+              placeholder="http://servidor:8080"
+              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+            />
+          </label>
+          <label class="grid gap-2 text-[20px] text-mute"
+            >Usuário
+            <input
+              id="plUser"
+              name="username"
+              autocomplete="off"
+              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+            />
+          </label>
+          <label class="grid gap-2 text-[20px] text-mute"
             >Senha
-            <input id="plPass" name="password" type="password" autocomplete="current-password"
-          /></label>
-          <div class="actions">
-            <button type="submit">Guardar XC</button>
-            <button type="button" id="demoBtn">Carregar demo</button>
+            <input
+              id="plPass"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+            />
+          </label>
+          <div class="flex gap-4">
+            <button
+              type="submit"
+              class="cursor-pointer border-2 border-brass bg-transparent px-[22px] py-3.5 font-sans text-2xl text-brass"
+            >
+              Guardar XC
+            </button>
+            <button
+              type="button"
+              id="demoBtn"
+              class="cursor-pointer border-2 border-brass bg-transparent px-[22px] py-3.5 font-sans text-2xl text-brass"
+            >
+              Carregar demo
+            </button>
           </div>
         </form>
       </section>
-      <p id="error" class="error" role="alert"></p>
+      <p id="error" class="min-h-[1.4em] text-[22px] text-warn" role="alert"></p>
     </main>
     <script type="module" src="./app.js"></script>
   </body>

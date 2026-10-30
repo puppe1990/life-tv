@@ -8,6 +8,16 @@ import {
   HOME_TILES,
   openHomeTile,
 } from '../src/tvShell.mjs'
+import {
+  catItemClass,
+  catListClass,
+  itemClass,
+  itemListClass,
+  playerNoteClass,
+  playerTitleClass,
+  playerUrlClass,
+  tileClass,
+} from '../src/tvSkin.mjs'
 import { createXtreamClient } from '../src/xtreamClient.mjs'
 
 const store = createPlaylistStore()
@@ -54,7 +64,7 @@ function renderHome() {
   root.replaceChildren(
     ...HOME_TILES.map((tile) => {
       const btn = document.createElement('button')
-      btn.className = 'tile'
+      btn.className = tileClass(tile.id === shell.homeId)
       btn.type = 'button'
       btn.textContent = tile.label
       btn.setAttribute('aria-selected', String(tile.id === shell.homeId))
@@ -69,16 +79,18 @@ function renderCatalog() {
   root.hidden = shell.screen !== 'catalog'
   if (shell.screen !== 'catalog') return
   const cats = document.createElement('ul')
-  cats.className = 'cats'
+  cats.className = catListClass()
   const items = document.createElement('ul')
-  items.className = 'items'
+  items.className = itemListClass()
   for (const cat of shell.catalog?.categories ?? []) {
     const li = document.createElement('li')
+    li.className = catItemClass()
     li.textContent = cat.name
     cats.append(li)
   }
   for (const item of shell.catalog?.categories[shell.categoryIndex]?.items ?? []) {
     const li = document.createElement('li')
+    li.className = itemClass(item.id === shell.selectedItem?.id)
     li.textContent = item.name
     li.setAttribute('aria-selected', String(item.id === shell.selectedItem?.id))
     items.append(li)
@@ -91,10 +103,13 @@ function renderPlayer() {
   root.hidden = shell.screen !== 'player'
   if (shell.screen !== 'player') return
   const title = document.createElement('h1')
+  title.className = playerTitleClass()
   title.textContent = shell.selectedItem?.name ?? 'Sem título'
   const note = document.createElement('p')
+  note.className = playerNoteClass()
   note.textContent = 'URL montada localmente. O sidecar mpv entra no Tauri.'
   const code = document.createElement('code')
+  code.className = playerUrlClass()
   code.textContent = playUrl()
   root.replaceChildren(title, note, code)
 }

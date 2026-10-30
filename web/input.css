@@ -1,0 +1,64 @@
+@import 'tailwindcss';
+
+@source '../src/**/*.mjs';
+@source './**/*.{html,js}';
+
+@theme {
+  --font-sans: 'Avenir Next', 'Segoe UI', sans-serif;
+  --font-display: 'Iowan Old Style', Palatino, 'Palatino Linotype', serif;
+  --color-ink: #f3e6c8;
+  --color-mute: #b7a48a;
+  --color-brass: #e0b15a;
+  --color-phosphor: #8dffb0;
+  --color-void: #100c08;
+  --color-panel: #1c1510;
+  --color-line: #3a2c1c;
+  --color-warn: #ff8a7a;
+  --color-ember: #2a1c12;
+  --color-tile-top: #261c14;
+  --color-well: #0c0907;
+}
+
+/*
+  Scanlines e [hidden] ficam fora do JIT: overlay CRT e display:none
+  em grid (sem !important o Tailwind Preflight vaza seção escondida).
+*/
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    background: radial-gradient(
+      1200px 700px at 20% -10%,
+      var(--color-ember) 0%,
+      var(--color-void) 55%
+    );
+    color: var(--color-ink);
+  }
+
+  body::before {
+    content: '';
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0.08) 0,
+      rgb(0 0 0 / 0.08) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    opacity: 0.35;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+}

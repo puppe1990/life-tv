@@ -9,8 +9,9 @@ npm ci
 npm test            # node --test + @faker-js/faker
 npm run lint
 npm run format:check
+npm run css         # Tailwind CLI → web/style.css
 npm run ci
-npm run dev         # http://127.0.0.1:8792/web/  (não use 8765)
+npm run dev         # css + http://127.0.0.1:8792/web/  (não use 8765)
 ```
 
 Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.
