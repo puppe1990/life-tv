@@ -14,6 +14,7 @@ function readAction(url) {
     action: parsed.searchParams.get('action'),
     streamId: parsed.searchParams.get('stream_id'),
     seriesId: parsed.searchParams.get('series_id'),
+    vodId: parsed.searchParams.get('vod_id'),
   }
 }
 
@@ -30,6 +31,7 @@ export function createFakeXtreamPortal({
   series = [],
   shortEpg = {},
   seriesInfo = {},
+  vodInfo = {},
   m3uText = '',
 }) {
   const tables = {
@@ -43,6 +45,7 @@ export function createFakeXtreamPortal({
   const byId = {
     get_short_epg: (req) => shortEpg[req.streamId] ?? { epg_listings: [] },
     get_series_info: (req) => seriesInfo[req.seriesId] ?? { episodes: {} },
+    get_vod_info: (req) => vodInfo[req.vodId] ?? { info: {}, movie_data: {} },
   }
   return async function fakeFetch(url) {
     const req = readAction(url)

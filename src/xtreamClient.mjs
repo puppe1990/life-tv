@@ -2,6 +2,7 @@ import { mapCatalog } from './mapCatalog.mjs'
 import { flattenEpisodes } from './parseSeriesInfo.mjs'
 import { parseShortEpg } from './parseShortEpg.mjs'
 import { parseXmltv } from './parseXmltv.mjs'
+import { parseVodInfo } from './parseVodInfo.mjs'
 import { parseXtreamLogin } from './parseXtreamLogin.mjs'
 import {
   liveStreamUrl,
@@ -94,6 +95,9 @@ export function createXtreamClient({ playlist, fetch: fetchFn }) {
     async seriesEpisodes(seriesId) {
       const payload = await getJson(fetchFn, cred, 'get_series_info', { series_id: seriesId })
       return flattenEpisodes(payload)
+    },
+    async vodInfo(vodId) {
+      return parseVodInfo(await getJson(fetchFn, cred, 'get_vod_info', { vod_id: vodId }))
     },
     async shortEpg(streamId) {
       const payload = await getJson(fetchFn, cred, 'get_short_epg', { stream_id: streamId })

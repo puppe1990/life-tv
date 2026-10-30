@@ -29,31 +29,67 @@ const TAB_SCREENS = {
 
 const FEATURED_KIND = { live: 'Ao vivo', movies: 'Filme', series: 'Série' }
 
+function renderFeaturedPoster(featured) {
+  const box = el(
+    'div',
+    'h-[120px] w-[90px] shrink-0 overflow-hidden border border-line bg-well md:h-[240px] md:w-[170px]',
+  )
+  if (!featured.poster) return box
+  const image = el('img', 'h-full w-full object-cover')
+  image.src = featured.poster
+  image.alt = featured.name
+  box.append(image)
+  return box
+}
+
+function renderFeaturedBadges(featured) {
+  const row = el('div', 'flex flex-wrap items-center gap-2')
+  const kind = FEATURED_KIND[featured.kind]
+  if (kind) {
+    row.append(
+      el('span', 'bg-accent px-3 py-1 text-[clamp(12px,0.9vw,16px)] font-semibold text-void', kind),
+    )
+  }
+  if (featured.year) {
+    row.append(el('span', 'bg-row px-3 py-1 text-[clamp(12px,0.9vw,16px)]', featured.year))
+  }
+  if (featured.rating) {
+    row.append(
+      el(
+        'span',
+        'bg-row px-3 py-1 text-[clamp(12px,0.9vw,16px)] text-mute',
+        `★ ${featured.rating}`,
+      ),
+    )
+  }
+  return row
+}
+
 function renderFeatured() {
   const featured = state.featured
   if (!featured) return []
   const card = el(
     'article',
-    'flex flex-col gap-6 border border-line bg-panel p-5 md:flex-row md:items-center md:gap-8 md:p-8',
+    'relative overflow-hidden border border-line bg-linear-to-br from-panel to-well',
   )
-  card.append(el('div', 'h-[120px] w-[90px] border border-line bg-well md:h-[180px] md:w-[130px]'))
-  const info = el('div', 'grid gap-3')
-  info.append(el('h2', 'm-0 text-[clamp(22px,2.2vw,40px)] font-semibold', featured.name))
-  info.append(
-    el(
-      'span',
-      'w-fit bg-accent px-3 py-1 text-[18px] text-void',
-      FEATURED_KIND[featured.kind] ?? '',
-    ),
+  if (featured.backdrop) {
+    const backdrop = el('div', 'absolute inset-0 bg-cover bg-center opacity-25')
+    backdrop.style.backgroundImage = `url("${featured.backdrop}")`
+    card.append(backdrop)
+  }
+  const content = el(
+    'div',
+    'relative flex flex-col gap-5 p-4 md:flex-row md:items-end md:gap-8 md:p-8',
   )
-  info.append(
-    el(
-      'p',
-      'm-0 max-w-[70ch] text-[clamp(14px,1vw,20px)] text-mute',
-      `#${featured.id} · visto no catálogo`,
-    ),
-  )
-  card.append(info)
+  content.append(renderFeaturedPoster(featured))
+  const info = el('div', 'grid min-w-0 gap-3')
+  info.append(el('h2', 'm-0 text-[clamp(22px,2.4vw,44px)] font-semibold', featured.name))
+  info.append(renderFeaturedBadges(featured))
+  if (featured.plot) {
+    info.append(el('p', 'm-0 max-w-[70ch] text-[clamp(14px,1vw,20px)] text-mute', featured.plot))
+  }
+  content.append(info)
+  card.append(content)
   return [card]
 }
 
