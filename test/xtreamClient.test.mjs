@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { beforeEach, test } from 'node:test'
 import { createXtreamClient } from '../src/xtreamClient.mjs'
+import { createDemoFetch, DEMO_PLAYLIST } from '../src/demoPortal.mjs'
 import { createFakeXtreamPortal } from '../src/fakeXtreamPortal.mjs'
 import { liveStreamUrl } from '../src/xtreamUrls.mjs'
 import {
@@ -134,4 +135,19 @@ test('seriesCatalog usa series_id do faker', async () => {
   assert.equal(catalog.kind, 'series')
   assert.equal(catalog.categories[0].items[0].id, series.series_id)
   assert.equal(catalog.categories[0].items[0].name, series.name)
+})
+
+test('demo entrega EPG curto do canal', async () => {
+  const client = createXtreamClient({ playlist: DEMO_PLAYLIST, fetch: createDemoFetch() })
+  const listings = await client.shortEpg(101)
+  assert.equal(listings.length, 1)
+  assert.equal(listings[0].title, 'Jornal da Cultura')
+  assert.equal(listings[0].hasArchive, true)
+})
+
+test('demo entrega episódios da série', async () => {
+  const client = createXtreamClient({ playlist: DEMO_PLAYLIST, fetch: createDemoFetch() })
+  const episodes = await client.seriesEpisodes(401)
+  assert.equal(episodes.length, 1)
+  assert.equal(episodes[0].extension, 'mp4')
 })

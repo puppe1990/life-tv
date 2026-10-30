@@ -12,6 +12,8 @@ function readAction(url) {
     username: parsed.searchParams.get('username'),
     password: parsed.searchParams.get('password'),
     action: parsed.searchParams.get('action'),
+    streamId: parsed.searchParams.get('stream_id'),
+    seriesId: parsed.searchParams.get('series_id'),
   }
 }
 
@@ -26,6 +28,8 @@ export function createFakeXtreamPortal({
   vodStreams = [],
   seriesCategories = [],
   series = [],
+  shortEpg = {},
+  seriesInfo = {},
   m3uText = '',
 }) {
   const tables = {
@@ -35,6 +39,10 @@ export function createFakeXtreamPortal({
     get_vod_streams: vodStreams,
     get_series_categories: seriesCategories,
     get_series: series,
+  }
+  const byId = {
+    get_short_epg: (req) => shortEpg[req.streamId] ?? { epg_listings: [] },
+    get_series_info: (req) => seriesInfo[req.seriesId] ?? { episodes: {} },
   }
   return async function fakeFetch(url) {
     const req = readAction(url)
@@ -48,6 +56,7 @@ export function createFakeXtreamPortal({
       return jsonOk({ user_info: { auth: 0, status: 'Disabled' }, server_info: {} })
     }
     if (!req.action) return jsonOk(login)
+    if (byId[req.action]) return jsonOk(byId[req.action](req))
     return jsonOk(tables[req.action] ?? [])
   }
 }

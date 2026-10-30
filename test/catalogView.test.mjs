@@ -125,3 +125,14 @@ test('abas marcam a ativa com a classe do amarelo', () => {
   assert.match(document.getElementById('tab-movies').className, /text-accent/)
   assert.equal(document.getElementById('tab-inicio').className.includes('text-accent'), false)
 })
+
+test('home mostra o destaque quando há item escolhido', () => {
+  state.featured = { kind: 'live', name: 'TV Cultura', id: 101 }
+  renderHome()
+  const hero = document.querySelector('#home article')
+  assert.ok(hero)
+  assert.match(hero.textContent, /TV Cultura/)
+  assert.match(hero.textContent, /Ao vivo/)
+  assert.equal(document.querySelectorAll('#home button').length, 4)
+  state.featured = null
+})
