@@ -18,6 +18,7 @@ fn play_sidecar(url: String) -> Result<(), String> {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_http::init())
         .invoke_handler(tauri::generate_handler![play_sidecar])
         .run(tauri::generate_context!())
         .expect("falha ao abrir a janela do Life TV");

@@ -28,6 +28,11 @@ let shell = createTvShell()
 let client = demoClient()
 let errorText = ''
 
+function tauriFetch() {
+  const http = globalThis.__TAURI__?.http
+  return typeof http?.fetch === 'function' ? http.fetch : null
+}
+
 function localStore() {
   try {
     return globalThis.localStorage ?? null
@@ -330,7 +335,10 @@ function savePlaylist(event) {
       username: byId('plUser').value,
       password: byId('plPass').value,
     })
-    client = createXtreamClient({ playlist, fetch: globalThis.fetch.bind(globalThis) })
+    client = createXtreamClient({
+      playlist,
+      fetch: tauriFetch() ?? globalThis.fetch.bind(globalThis),
+    })
     errorText = ''
     shell = createTvShell()
     render()
