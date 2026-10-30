@@ -25,12 +25,17 @@ export function xcGetPhpUrl({ portal, username, password, type = 'm3u_plus', out
   return `${base}/get.php?username=${user}&password=${pass}&type=${type}&output=${output}`
 }
 
-export function playerApiUrl({ portal, username, password, action }) {
+export function playerApiUrl({ portal, username, password, action, params = null }) {
   const base = normalizePortal(portal)
   const { user, pass } = encodeCred(username, password)
   const qs = `username=${user}&password=${pass}`
-  if (!action) return `${base}/player_api.php?${qs}`
-  return `${base}/player_api.php?${qs}&action=${encodeURIComponent(action)}`
+  const extra = params
+    ? Object.entries(params)
+        .map(([key, value]) => `&${key}=${encodeURIComponent(value)}`)
+        .join('')
+    : ''
+  if (!action) return `${base}/player_api.php?${qs}${extra}`
+  return `${base}/player_api.php?${qs}&action=${encodeURIComponent(action)}${extra}`
 }
 
 export function liveStreamUrl({ portal, username, password, streamId, output = 'm3u8' }) {
@@ -49,4 +54,36 @@ export function seriesStreamUrl({ portal, username, password, episodeId, extensi
   const base = normalizePortal(portal)
   const { user, pass } = encodeCred(username, password)
   return `${base}/series/${user}/${pass}/${episodeId}.${extension}`
+}
+
+export function xmltvUrl({ portal, username, password }) {
+  const base = normalizePortal(portal)
+  const { user, pass } = encodeCred(username, password)
+  return `${base}/xmltv.php?username=${user}&password=${pass}`
+}
+
+const TIMESHIFT_START = /^(\d{4})-(\d{2})-(\d{2})[ T:](\d{2})[:-](\d{2})/
+
+/** Normaliza "AAAA-MM-DD HH:mm:ss" (Xtream) para "AAAA-MM-DD:HH-mm" (URL). */
+export function timeshiftStart(value) {
+  const match = String(value).match(TIMESHIFT_START)
+  if (!match) {
+    throw new Error(
+      `start recusado: recebido ${JSON.stringify(value)}, esperado AAAA-MM-DD HH:mm:ss`,
+    )
+  }
+  const [, year, month, day, hour, minute] = match
+  return `${year}-${month}-${day}:${hour}-${minute}`
+}
+
+export function timeshiftUrl({ portal, username, password, streamId, durationMinutes, start }) {
+  const normalized = timeshiftStart(start)
+  if (!Number.isInteger(durationMinutes) || durationMinutes <= 0) {
+    throw new Error(
+      `duração recusada: recebido ${JSON.stringify(durationMinutes)}, esperado minutos inteiros`,
+    )
+  }
+  const base = normalizePortal(portal)
+  const { user, pass } = encodeCred(username, password)
+  return `${base}/timeshift/${user}/${pass}/${durationMinutes}/${normalized}/${streamId}.ts`
 }
