@@ -9,6 +9,8 @@ import {
   openHomeTile,
 } from '../src/tvShell.mjs'
 import {
+  actionClass,
+  catCountClass,
   catItemClass,
   catListClass,
   itemClass,
@@ -16,8 +18,10 @@ import {
   playerNoteClass,
   playerTitleClass,
   playerUrlClass,
+  tabClass,
   tileClass,
 } from '../src/tvSkin.mjs'
+import { createFavLockStore } from '../src/favLockStore.mjs'
 import { discoverPortal } from '../src/discoverPortal.mjs'
 import { createJsonBucket } from '../src/jsonBucket.mjs'
 import { redactPlaylist, restorePlaylist } from '../src/playlistSecret.mjs'
@@ -80,6 +84,10 @@ const store = createPlaylistStore({
       playlistsBucket.write(tauriInvoke() ? items.map(redactPlaylist) : items)
     },
   },
+})
+
+const favStore = createFavLockStore({
+  bucket: createJsonBucket({ storage: localStore(), key: 'life-tv:favs' }),
 })
 
 const resumeStore = createResumeStore({
@@ -178,28 +186,150 @@ function renderHome() {
   )
 }
 
+function goToScreen({ screen, catalogKind = null }) {
+  if (screen === 'home') {
+    shell = createTvShell()
+    render()
+    return
+  }
+  void onTile(screen === 'settings' ? 'settings' : catalogKind)
+}
+
+function renderTabs() {
+  const active = shell.screen === 'catalog' ? shell.catalogKind : shell.screen
+  const map = {
+    'tab-inicio': 'home',
+    'tab-live': 'live',
+    'tab-movies': 'movies',
+    'tab-series': 'series',
+    'tab-settings': 'settings',
+  }
+  for (const [id, name] of Object.entries(map)) {
+    byId(id).className = tabClass(active === name)
+  }
+}
+
+function currentCategory() {
+  return shell.catalog?.categories?.[shell.categoryIndex] ?? null
+}
+
+function onCategory(index) {
+  const category = shell.catalog?.categories?.[index]
+  if (!category) return
+  shell = {
+    ...shell,
+    categoryIndex: index,
+    itemIndex: 0,
+    selectedItem: category.items[0] ?? null,
+  }
+  render()
+}
+
+function onItem(item) {
+  const index = (currentCategory()?.items ?? []).findIndex((candidate) => candidate.id === item.id)
+  shell = { ...shell, itemIndex: Math.max(0, index), selectedItem: item, screen: 'player' }
+  render()
+}
+
+function filteredCategories() {
+  const term = (byId('search')?.value ?? '').trim().toLowerCase()
+  const categories = shell.catalog?.categories ?? []
+  if (!term) return categories.map((category, index) => ({ ...category, sourceIndex: index }))
+  return categories
+    .map((category, index) => ({
+      ...category,
+      sourceIndex: index,
+      items: category.items.filter((item) => item.name.toLowerCase().includes(term)),
+    }))
+    .filter((category) => category.items.length > 0)
+}
+
+function renderCategories(categories) {
+  const list = byId('categories')
+  list.className = catListClass()
+  list.replaceChildren()
+  for (const category of categories) {
+    const selected = category.sourceIndex === shell.categoryIndex
+    const row = document.createElement('li')
+    row.className = catItemClass(selected)
+    row.setAttribute('aria-selected', String(selected))
+    const name = document.createElement('span')
+    name.textContent = category.name
+    const count = document.createElement('span')
+    count.className = catCountClass()
+    count.textContent = String(category.items.length)
+    row.append(name, count)
+    row.addEventListener('click', () => onCategory(category.sourceIndex))
+    list.append(row)
+  }
+}
+
+function renderItems(categories) {
+  const list = byId('items')
+  list.className = itemListClass()
+  list.replaceChildren()
+  const category = categories.find((entry) => entry.sourceIndex === shell.categoryIndex)
+  for (const [index, item] of (category?.items ?? []).entries()) {
+    const row = document.createElement('li')
+    row.className = itemClass(item.id === shell.selectedItem?.id)
+    row.setAttribute('aria-selected', String(item.id === shell.selectedItem?.id))
+    const number = document.createElement('span')
+    number.className = 'mr-4 text-mute'
+    number.textContent = String(index + 1).padStart(2, '0')
+    const name = document.createElement('span')
+    name.textContent = item.name
+    row.append(number, name)
+    row.addEventListener('click', () => onItem(item))
+    list.append(row)
+  }
+}
+
+function renderDetail() {
+  const root = byId('detail')
+  const item = shell.selectedItem
+  if (!item) {
+    root.replaceChildren()
+    return
+  }
+  const title = document.createElement('h2')
+  title.className = playerTitleClass()
+  title.textContent = item.name
+  const meta = document.createElement('p')
+  meta.className = playerNoteClass()
+  meta.textContent = `#${item.id}${item.extension ? ` · ${item.extension}` : ''}`
+  const nodes = [title, meta]
+  if (shell.catalogKind === 'live') {
+    ensureEpg(item)
+    if (epgState.listings.length) nodes.push(epgBlock(item))
+  }
+  const actions = document.createElement('div')
+  actions.className = 'flex flex-wrap gap-3'
+  const fav = document.createElement('button')
+  fav.type = 'button'
+  fav.className = actionClass()
+  fav.textContent = favStore.isFav(item.id) ? 'Remover favorito' : 'Add to Favorite'
+  fav.addEventListener('click', () => {
+    favStore.toggleFav(item.id)
+    render()
+  })
+  const play = document.createElement('button')
+  play.type = 'button'
+  play.className = actionClass()
+  play.textContent = 'Assistir'
+  play.addEventListener('click', () => onItem(item))
+  actions.append(play, fav)
+  nodes.push(actions)
+  root.replaceChildren(...nodes)
+}
+
 function renderCatalog() {
-  const root = byId('catalog')
-  root.hidden = shell.screen !== 'catalog'
-  if (shell.screen !== 'catalog') return
-  const cats = document.createElement('ul')
-  cats.className = catListClass()
-  const items = document.createElement('ul')
-  items.className = itemListClass()
-  for (const cat of shell.catalog?.categories ?? []) {
-    const li = document.createElement('li')
-    li.className = catItemClass()
-    li.textContent = cat.name
-    cats.append(li)
-  }
-  for (const item of shell.catalog?.categories[shell.categoryIndex]?.items ?? []) {
-    const li = document.createElement('li')
-    li.className = itemClass(item.id === shell.selectedItem?.id)
-    li.textContent = item.name
-    li.setAttribute('aria-selected', String(item.id === shell.selectedItem?.id))
-    items.append(li)
-  }
-  root.replaceChildren(cats, items)
+  const visible = shell.screen === 'catalog'
+  byId('catalog').hidden = !visible
+  if (!visible) return
+  const categories = filteredCategories()
+  renderCategories(categories)
+  renderItems(categories)
+  renderDetail()
 }
 
 function streamIdOf(item) {
@@ -374,6 +504,7 @@ function render() {
   renderCatalog()
   renderPlayer()
   renderSettings()
+  renderTabs()
   byId('error').textContent = errorText
 }
 
@@ -540,6 +671,15 @@ async function boot() {
   document.addEventListener('keydown', onKey)
   byId('demoBtn').addEventListener('click', bootDemo)
   byId('discoverBtn').addEventListener('click', discover)
+  byId('search').addEventListener('input', render)
+  for (const id of ['tab-inicio', 'tab-live', 'tab-movies', 'tab-series', 'tab-settings']) {
+    byId(id).addEventListener('click', () => {
+      const button = byId(id)
+      if (button.dataset.catalog)
+        goToScreen({ screen: 'catalog', catalogKind: button.dataset.catalog })
+      else goToScreen({ screen: button.dataset.screen })
+    })
+  }
   byId('playlistForm').addEventListener('submit', savePlaylist)
   if (await bootSaved()) return
   if (await bootSeed()) return

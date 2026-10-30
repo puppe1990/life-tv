@@ -7,97 +7,157 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body class="font-sans">
-    <main class="grid min-h-screen content-start gap-9 px-[72px] pt-12 pb-[72px]">
-      <header class="flex items-baseline justify-between">
-        <p class="font-display m-0 text-[42px] tracking-[0.28em] text-brass uppercase">Life TV</p>
-        <p id="hint" class="m-0 text-[22px] tracking-[0.08em] text-mute">← → ↑ ↓ · Enter · Esc</p>
-      </header>
+    <header class="flex items-center gap-10 px-14 pt-7 pb-6">
+      <nav id="tabs" class="flex items-center gap-9">
+        <button
+          type="button"
+          id="tab-inicio"
+          data-screen="home"
+          class="border-0 bg-transparent p-0"
+        >
+          Início
+        </button>
+        <button type="button" id="tab-live" data-catalog="live" class="border-0 bg-transparent p-0">
+          Live TV
+        </button>
+        <button
+          type="button"
+          id="tab-movies"
+          data-catalog="movies"
+          class="border-0 bg-transparent p-0"
+        >
+          Filmes
+        </button>
+        <button
+          type="button"
+          id="tab-series"
+          data-catalog="series"
+          class="border-0 bg-transparent p-0"
+        >
+          Séries
+        </button>
+        <button
+          type="button"
+          id="tab-settings"
+          data-screen="settings"
+          class="border-0 bg-transparent p-0"
+        >
+          Ajustes
+        </button>
+      </nav>
+      <input
+        id="search"
+        type="search"
+        autocomplete="off"
+        placeholder="Buscar"
+        class="w-[520px] rounded-full border border-line bg-transparent px-6 py-3 text-[22px] text-ink outline-none"
+      />
+      <div class="ml-auto flex items-center gap-4">
+        <span id="hint" class="text-[18px] tracking-[0.08em] text-mute">← → ↑ ↓ · Enter · Esc</span>
+        <span class="text-[26px] font-semibold tracking-[0.22em] uppercase">Life TV</span>
+      </div>
+    </header>
+
+    <main class="px-14 pb-16">
       <section
         id="home"
-        class="grid grid-cols-[repeat(4,minmax(200px,1fr))] gap-7"
+        class="grid grid-cols-[repeat(4,minmax(200px,1fr))] gap-6"
         aria-label="Início"
       ></section>
-      <section id="catalog" class="grid min-h-[420px] grid-cols-[280px_1fr] gap-8" hidden></section>
-      <section id="player" class="border-2 border-line bg-panel p-12" hidden></section>
+
+      <section
+        id="catalog"
+        class="grid min-h-[560px] grid-cols-[340px_520px_1fr] items-start"
+        hidden
+      >
+        <ul id="categories" class="m-0 list-none p-0"></ul>
+        <ul id="items" class="m-0 list-none p-0"></ul>
+        <aside
+          id="detail"
+          class="flex h-full flex-col justify-between gap-6 bg-panel/40 p-7"
+        ></aside>
+      </section>
+
+      <section id="player" class="bg-panel p-10" hidden></section>
+
       <section id="settings" hidden>
-        <h1 class="font-display m-0 mb-2 text-[40px]">Ajustes</h1>
-        <p class="mb-6 max-w-[40ch] text-[22px] text-mute">
+        <h1 class="m-0 mb-2 text-[38px] font-semibold">Ajustes</h1>
+        <p class="mb-6 max-w-[46ch] text-[20px] text-mute">
           Playlist própria. Sem MAC, sem VPN, sem catálogo de terceiros.
         </p>
-        <form id="playlistForm" class="grid max-w-[640px] gap-[18px]">
-          <label class="grid gap-2 text-[20px] text-mute"
+        <form id="playlistForm" class="grid max-w-[680px] gap-4">
+          <label class="grid gap-2 text-[18px] text-mute"
             >Nome
             <input
               id="plName"
               name="name"
               autocomplete="off"
-              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
             />
           </label>
-          <label class="grid gap-2 text-[20px] text-mute"
+          <label class="grid gap-2 text-[18px] text-mute"
             >Portal
             <input
               id="plPortal"
               name="portal"
               placeholder="http://servidor:8080"
-              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
             />
           </label>
-          <label class="grid gap-2 text-[20px] text-mute"
+          <label class="grid gap-2 text-[18px] text-mute"
             >Usuário
             <input
               id="plUser"
               name="username"
               autocomplete="off"
-              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
             />
           </label>
-          <label class="grid gap-2 text-[20px] text-mute"
+          <label class="grid gap-2 text-[18px] text-mute"
             >Senha
             <input
               id="plPass"
               name="password"
               type="password"
               autocomplete="current-password"
-              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
             />
           </label>
-          <label class="grid gap-2 text-[20px] text-mute"
+          <label class="grid gap-2 text-[18px] text-mute"
             >Portais para descobrir (um por linha)
             <textarea
               id="plCandidates"
               name="candidates"
               rows="3"
               placeholder="http://servidor-a.com&#10;http://servidor-b.com"
-              class="border-2 border-line bg-well px-4 py-3.5 font-sans text-2xl text-ink"
+              class="border border-line bg-well px-4 py-3 font-sans text-[22px] text-ink"
             ></textarea>
           </label>
           <div class="flex gap-4">
-            <button
-              type="submit"
-              class="cursor-pointer border-2 border-brass bg-transparent px-[22px] py-3.5 font-sans text-2xl text-brass"
-            >
+            <button type="submit" class="cursor-pointer border-0 bg-action px-6 py-3 text-[22px]">
               Guardar XC
             </button>
             <button
               type="button"
               id="discoverBtn"
-              class="cursor-pointer border-2 border-brass bg-transparent px-[22px] py-3.5 font-sans text-2xl text-brass"
+              class="cursor-pointer border border-line bg-transparent px-6 py-3 text-[22px] text-ink"
             >
               Descobrir portal
             </button>
             <button
               type="button"
               id="demoBtn"
-              class="cursor-pointer border-2 border-brass bg-transparent px-[22px] py-3.5 font-sans text-2xl text-brass"
+              class="cursor-pointer border border-line bg-transparent px-6 py-3 text-[22px] text-ink"
             >
               Carregar demo
             </button>
           </div>
         </form>
       </section>
-      <p id="error" class="min-h-[1.4em] text-[22px] text-warn" role="alert"></p>
+
+      <p id="error" class="mt-6 min-h-[1.4em] text-[20px] text-warn" role="alert"></p>
     </main>
+
     <script type="module" src="./app.js"></script>
   </body>
 </html>

@@ -4,25 +4,21 @@
 @source './**/*.{html,js}';
 
 @theme {
-  --font-sans: 'Avenir Next', 'Segoe UI', sans-serif;
-  --font-display: 'Iowan Old Style', Palatino, 'Palatino Linotype', serif;
-  --color-ink: #f3e6c8;
-  --color-mute: #b7a48a;
-  --color-brass: #e0b15a;
-  --color-phosphor: #8dffb0;
-  --color-void: #100c08;
-  --color-panel: #1c1510;
-  --color-line: #3a2c1c;
-  --color-warn: #ff8a7a;
-  --color-ember: #2a1c12;
-  --color-tile-top: #261c14;
-  --color-well: #0c0907;
+  --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  --color-ink: #ffffff;
+  --color-mute: #9aa0a6;
+  --color-accent: #ffd400;
+  --color-action: #1a6fd4;
+  --color-panel: #17181b;
+  --color-row: #202227;
+  --color-line: #2b2e33;
+  --color-void: #05070b;
+  --color-well: #101216;
+  --color-warn: #ff6b6b;
 }
 
-/*
-  Scanlines e [hidden] ficam fora do JIT: overlay CRT e display:none
-  em grid (sem !important o Tailwind Preflight vaza seção escondida).
-*/
+/* Fundo preto com o feixe azul do app original, sem custo de imagem. */
 @layer base {
   html {
     color-scheme: dark;
@@ -35,27 +31,11 @@
   }
 
   body {
-    background: radial-gradient(
-      1200px 700px at 20% -10%,
-      var(--color-ember) 0%,
-      var(--color-void) 55%
-    );
+    background:
+      radial-gradient(1100px 620px at 88% -10%, rgb(26 111 212 / 0.35) 0%, transparent 62%),
+      radial-gradient(700px 420px at 100% 55%, rgb(26 111 212 / 0.18) 0%, transparent 70%),
+      var(--color-void);
     color: var(--color-ink);
-  }
-
-  body::before {
-    content: '';
-    pointer-events: none;
-    position: fixed;
-    inset: 0;
-    background: repeating-linear-gradient(
-      to bottom,
-      rgb(0 0 0 / 0.08) 0,
-      rgb(0 0 0 / 0.08) 1px,
-      transparent 1px,
-      transparent 3px
-    );
-    opacity: 0.35;
   }
 
   [hidden] {
