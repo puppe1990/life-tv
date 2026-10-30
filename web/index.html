@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Life TV</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <header class="top">
+        <p class="brand">Life TV</p>
+        <p class="hint" id="hint">← → ↑ ↓ · Enter · Esc</p>
+      </header>
+      <section id="home" class="rail" aria-label="Início"></section>
+      <section id="catalog" class="board" hidden></section>
+      <section id="player" class="player" hidden></section>
+      <section id="settings" class="desk" hidden>
+        <h1>Ajustes</h1>
+        <p class="lede">Playlist própria. Sem MAC, sem VPN, sem catálogo de terceiros.</p>
+        <form id="playlistForm" class="form">
+          <label>Nome <input id="plName" name="name" autocomplete="off" /></label>
+          <label
+            >Portal <input id="plPortal" name="portal" placeholder="http://servidor:8080"
+          /></label>
+          <label>Usuário <input id="plUser" name="username" autocomplete="off" /></label>
+          <label
+            >Senha
+            <input id="plPass" name="password" type="password" autocomplete="current-password"
+          /></label>
+          <div class="actions">
+            <button type="submit">Guardar XC</button>
+            <button type="button" id="demoBtn">Carregar demo</button>
+          </div>
+        </form>
+      </section>
+      <p id="error" class="error" role="alert"></p>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

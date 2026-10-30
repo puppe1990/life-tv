@@ -8,7 +8,12 @@ Destino: shell Tauri 2 em landscape 10-foot (Dell). Hoje o núcleo é testável 
 npm ci
 npm test            # node --test + @faker-js/faker
 npm run ci          # prettier + lint + test
+npm run dev         # http://127.0.0.1:8792/web/
 ```
+
+Repo: https://github.com/puppe1990/life-tv
+
+Home 10-foot: **Ao vivo / Filmes / Séries / Ajustes**. Setas e Enter. Demo local sem rede.
 
 ## O que entra
 

@@ -10,6 +10,7 @@ npm test            # node --test + @faker-js/faker
 npm run lint
 npm run format:check
 npm run ci
+npm run dev         # http://127.0.0.1:8792/web/  (não use 8765)
 ```
 
 Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.
@@ -29,6 +30,7 @@ Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.
 - Factories em `test/factories.mjs`; `faker.seed` por arquivo.
 - Catálogos, logins e M3U vêm do faker (hosts `.net`/`.org` sintéticos). Sem HTTP real.
 - Cada função nova ganha teste. Bugfix ganha regressão.
+- UI 10-foot em `web/` importa `../src/`. Preview pela raiz do repo.
 
 ## Fora de escopo
 

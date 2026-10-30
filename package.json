@@ -13,6 +13,7 @@
   },
   "scripts": {
     "test": "node --test test/*.test.mjs",
+    "dev": "python3 -m http.server 8792 --bind 127.0.0.1",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
