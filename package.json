@@ -22,7 +22,7 @@
     "format:check": "prettier --check .",
     "ci": "npm run css && npm run format:check && npm run lint && npm test",
     "tauri:dist": "node scripts/make-tauri-dist.mjs",
-    "tauri:dev": "cargo run --manifest-path src-tauri/Cargo.toml",
+    "tauri:dev": "npm run tauri:dist && cargo run --manifest-path src-tauri/Cargo.toml",
     "prepare": "husky"
   },
   "lint-staged": {
