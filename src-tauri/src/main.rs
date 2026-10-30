@@ -49,13 +49,26 @@ fn secret_get(account: String) -> Result<Option<String>, String> {
     }
 }
 
+/// Lê o seed local de ajustes (sem senha; senha fica no Keychain).
+#[tauri::command]
+fn seed_read() -> Result<Option<String>, String> {
+    let home = std::env::var("HOME").map_err(|error| format!("seed recusado: {error}"))?;
+    let path = format!("{home}/Library/Application Support/com.life-tv.app/seed.json");
+    match std::fs::read_to_string(&path) {
+        Ok(text) => Ok(Some(text)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(format!("seed recusado: {error}")),
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
         .invoke_handler(tauri::generate_handler![
             play_sidecar,
             secret_set,
-            secret_get
+            secret_get,
+            seed_read
         ])
         .run(tauri::generate_context!())
         .expect("falha ao abrir a janela do Life TV");
