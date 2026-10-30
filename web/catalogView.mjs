@@ -41,6 +41,7 @@ export function renderHome() {
   )
 }
 
+/** Marca a aba ativa pelo estado atual. */
 export function renderTabs() {
   const { shell } = state
   const active = shell.screen === 'catalog' ? shell.catalogKind : shell.screen
@@ -53,6 +54,7 @@ function currentCategory() {
   return state.shell.catalog?.categories?.[state.shell.categoryIndex] ?? null
 }
 
+/** Seleciona uma categoria e seu primeiro item. */
 export function selectCategory(index) {
   const category = state.shell.catalog?.categories?.[index]
   if (!category) return
@@ -65,6 +67,7 @@ export function selectCategory(index) {
   state.redraw()
 }
 
+/** Seleciona um item e abre o player. */
 export function selectItem(item) {
   const index = (currentCategory()?.items ?? []).findIndex((candidate) => candidate.id === item.id)
   state.shell = {
@@ -145,6 +148,7 @@ function renderDetail() {
   root.replaceChildren(...nodes)
 }
 
+/** Desenha categorias, itens e detalhe do catálogo. */
 export function renderCatalog() {
   const visible = state.shell.screen === 'catalog'
   byId('catalog').hidden = !visible

@@ -8,10 +8,12 @@ import { readSecret, readSeed, saveSecret, webFetch } from './bridge.mjs'
 import { clearError, setError, state } from './state.mjs'
 import { playlistStore } from './stores.mjs'
 
+/** Cliente Xtream apontado para o portal fake do demo. */
 export function demoClient() {
   return createXtreamClient({ playlist: DEMO_PLAYLIST, fetch: createDemoFetch() })
 }
 
+/** Busca o catálogo do tipo atual no cliente. */
 export function catalogFor(kind) {
   if (kind === 'live') return state.client.liveCatalog()
   if (kind === 'movies') return state.client.vodCatalog()
@@ -19,6 +21,7 @@ export function catalogFor(kind) {
   throw new Error(`catálogo recusado: recebido ${kind}, esperado live, movies ou series`)
 }
 
+/** URL de reprodução do item selecionado. */
 export function playUrl() {
   const { shell, client, series } = state
   const item = shell.selectedItem
@@ -29,6 +32,7 @@ export function playUrl() {
   return ''
 }
 
+/** Portais digitados + os das playlists salvas. */
 export function candidatesOf() {
   const typed = (byId('plCandidates')?.value ?? '')
     .split('\n')
@@ -57,6 +61,7 @@ async function rotatePortal() {
   return found.portal
 }
 
+/** Repete a chamada uma vez após trocar de portal. */
 export async function withRotation(run) {
   try {
     return await run()
@@ -68,6 +73,7 @@ export async function withRotation(run) {
   }
 }
 
+/** Carrega o catálogo com rotação de portal. */
 export async function fillCatalog() {
   try {
     clearError()
@@ -80,6 +86,7 @@ export async function fillCatalog() {
   }
 }
 
+/** Entra no modo demo sem rede. */
 export function startDemo() {
   state.client = demoClient()
   clearError()
@@ -87,6 +94,7 @@ export function startDemo() {
   state.redraw()
 }
 
+/** Valida, guarda e ativa a playlist do formulário. */
 export async function savePlaylist(event) {
   event.preventDefault()
   try {
@@ -113,6 +121,7 @@ function explainFailure(attempts) {
   return `Nenhum portal aceitou (${attempts.length} tentativas). ${reason}`
 }
 
+/** Testa os portais candidatos e preenche o encontrado. */
 export async function discover() {
   const typed = byId('plCandidates')
     .value.split('\n')
@@ -137,6 +146,7 @@ export async function discover() {
   }
 }
 
+/** Preenche o formulário com a playlist e o seed. */
 export async function hydrateSettingsForm(playlist) {
   if (playlist) {
     byId('plName').value = playlist.name ?? ''
@@ -148,6 +158,7 @@ export async function hydrateSettingsForm(playlist) {
   if (Array.isArray(seed?.candidates)) byId('plCandidates').value = seed.candidates.join('\n')
 }
 
+/** Cria a playlist a partir do seed local, se houver senha. */
 export async function bootSeed() {
   const seed = await readSeed()
   if (!seed || !seed.username) return false
@@ -169,6 +180,7 @@ export async function bootSeed() {
   return true
 }
 
+/** Entra na primeira playlist salva com senha disponível. */
 export async function bootSaved() {
   for (const saved of playlistStore.list()) {
     if (saved.kind !== 'xc') continue

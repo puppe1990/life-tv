@@ -45,6 +45,7 @@ function playerNote(source) {
   return source.reason
 }
 
+/** Resolve a URL do primeiro episódio da série. */
 export function ensureSeriesUrl(item) {
   const key = String(item.id)
   if (state.series.key === key) return
@@ -63,6 +64,7 @@ export function ensureSeriesUrl(item) {
     .finally(() => state.redraw())
 }
 
+/** Carrega o EPG curto do canal, uma vez por item. */
 export function ensureEpg(item) {
   const key = String(item.id)
   if (state.epg.key === key) return
@@ -92,6 +94,7 @@ function openCatchUp(item, listing) {
   }
 }
 
+/** Lista o EPG com atalho de catch-up quando há archive. */
 export function epgBlock(item) {
   const list = el('ul', 'list-none p-0 text-[20px] text-mute')
   for (const listing of state.epg.listings.slice(0, 6)) {
@@ -135,6 +138,7 @@ function sidecarButton(url) {
   return button
 }
 
+/** Desenha a tela do player com vídeo, nota e URL. */
 export function renderPlayer() {
   const root = byId('player')
   root.hidden = state.shell.screen !== 'player'

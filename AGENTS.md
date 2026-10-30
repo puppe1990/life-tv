@@ -5,7 +5,7 @@ Núcleo de catálogo/player para playlists **próprias** Xtream/M3U. Spec veio d
 ## Comandos
 
 ```bash
-npm ci
+npm ci --include=dev   # o ambiente tem NODE_ENV=production; sem a flag as devDeps somem
 npm test            # node --test + @faker-js/faker
 npm run lint
 npm run format:check

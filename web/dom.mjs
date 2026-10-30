@@ -1,3 +1,4 @@
+/** Atalho para getElementById. */
 export function byId(id) {
   return document.getElementById(id)
 }
