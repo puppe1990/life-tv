@@ -19,6 +19,16 @@ npm run tauri:app   # target-app/Life TV.app
 
 Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.
 
+## Mapa do web/ (cada módulo < 200 linhas)
+
+- `app.js` — wiring: atalhos, abas, boot (não desenha nada).
+- `session.mjs` — boot/seed/rotação de portal, catálogo e playlist.
+- `catalogView.mjs` — home, abas e catálogo em 3 colunas.
+- `playerView.mjs` — vídeo, resume, EPG, catch-up e player externo.
+- `render.mjs` — `renderAll()` a partir de `state`.
+- `state.mjs` / `stores.mjs` / `bridge.mjs` / `dom.mjs` — estado, stores, Tauri/storage, helpers DOM.
+- Núcleo puro e testado em `src/`; views não têm teste, então valide rodando o app.
+
 ## Code style
 
 - Functions: 4–20 linhas. Files: alvo 200–300, teto 500.
