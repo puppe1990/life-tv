@@ -22,6 +22,8 @@ Notas da engenharia reversa do APK de referência (protocolo, ofuscação, endpo
 
 Home 10-foot: **Ao vivo / Filmes / Séries / Ajustes**. Setas e Enter. Demo local sem rede.
 
+No app Tauri as playlists, favoritos e retomada ficam em `life-tv.sqlite` (0600) no diretório de dados do app. Senhas Xtream continuam no cofre `secrets.json`.
+
 ## O que entra
 
 - Login Xtream (`user_info` / `server_info`)

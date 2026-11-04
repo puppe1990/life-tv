@@ -1,12 +1,22 @@
+function loadFavs(stored, favs, locks) {
+  favs.clear()
+  locks.clear()
+  for (const id of stored?.favs ?? []) favs.add(String(id))
+  for (const [id, pin] of Object.entries(stored?.locks ?? {})) locks.set(id, pin)
+}
+
 /** Favorito e lock com pin por stream_id (equivale ao RealmController). */
 export function createFavLockStore({ bucket = null } = {}) {
-  const stored = bucket?.read() ?? {}
-  const favs = new Set(stored.favs ?? [])
-  const locks = new Map(Object.entries(stored.locks ?? {}))
+  const favs = new Set()
+  const locks = new Map()
+  loadFavs(bucket?.read(), favs, locks)
   function persist() {
     bucket?.write({ favs: [...favs], locks: Object.fromEntries(locks) })
   }
   return {
+    hydrate() {
+      loadFavs(bucket?.read(), favs, locks)
+    },
     isFav(streamId) {
       return favs.has(String(streamId))
     },

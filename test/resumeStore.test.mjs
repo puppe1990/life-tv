@@ -49,6 +49,25 @@ function createStorage() {
   }
 }
 
+test('hydrate relê posições depois do load assíncrono', () => {
+  let stored = {}
+  const bucket = {
+    read() {
+      return stored
+    },
+    write(value) {
+      stored = value
+    },
+  }
+  const store = createResumeStore({ bucket })
+  const streamId = String(faker.number.int({ min: 1000, max: 99_999 }))
+  const saved = { streamId, positionMs: 45_000, durationMs: 90 * 60_000 }
+  assert.equal(store.load(streamId), null)
+  stored = { [streamId]: saved }
+  store.hydrate()
+  assert.deepEqual(store.load(streamId), saved)
+})
+
 test('hidrata a store reaberta a partir do bucket', () => {
   const storage = createStorage()
   const streamId = faker.number.int({ min: 1000, max: 99_999 })

@@ -3,10 +3,19 @@ import { createFavLockStore } from '../src/favLockStore.mjs'
 import { createJsonBucket } from '../src/jsonBucket.mjs'
 import { redactPlaylist } from '../src/playlistSecret.mjs'
 import { createResumeStore } from '../src/resumeStore.mjs'
+import { createSqliteBucket, migrateLocalToSqlite } from '../src/sqliteBucket.mjs'
 import { localStore, tauriInvoke } from './bridge.mjs'
 import { STORAGE_KEYS } from './config.mjs'
 
-const playlistsBucket = createJsonBucket({ storage: localStore(), key: STORAGE_KEYS.playlists })
+function makeBucket(key) {
+  const invoke = tauriInvoke()
+  if (invoke) return createSqliteBucket({ invoke, key })
+  return createJsonBucket({ storage: localStore(), key })
+}
+
+const playlistsBucket = makeBucket(STORAGE_KEYS.playlists)
+const favsBucket = makeBucket(STORAGE_KEYS.favs)
+const resumeBucket = makeBucket(STORAGE_KEYS.resume)
 
 /** No shell Tauri a senha sai da playlist e vai pro cofre local. */
 const secretlessBucket = {
@@ -14,17 +23,28 @@ const secretlessBucket = {
     return playlistsBucket.read()
   },
   write(items) {
-    playlistsBucket.write(tauriInvoke() ? items.map(redactPlaylist) : items)
+    return playlistsBucket.write(tauriInvoke() ? items.map(redactPlaylist) : items)
   },
 }
 
 /** Playlists salvas; no Tauri a senha sai do registro. */
 export const playlistStore = createPlaylistStore({ bucket: secretlessBucket })
 /** Favoritos e travas por stream_id, persistidos. */
-export const favStore = createFavLockStore({
-  bucket: createJsonBucket({ storage: localStore(), key: STORAGE_KEYS.favs }),
-})
+export const favStore = createFavLockStore({ bucket: favsBucket })
 /** Posição de retomada por stream_id, persistida. */
-export const resumeStore = createResumeStore({
-  bucket: createJsonBucket({ storage: localStore(), key: STORAGE_KEYS.resume }),
-})
+export const resumeStore = createResumeStore({ bucket: resumeBucket })
+
+/** No Tauri, migra localStorage → sqlite e hidrata as stores. */
+export async function loadStores() {
+  const invoke = tauriInvoke()
+  if (!invoke) return
+  await migrateLocalToSqlite({
+    invoke,
+    storage: localStore(),
+    keys: Object.values(STORAGE_KEYS),
+  })
+  await Promise.all([playlistsBucket.load(), favsBucket.load(), resumeBucket.load()])
+  playlistStore.hydrate()
+  favStore.hydrate()
+  resumeStore.hydrate()
+}

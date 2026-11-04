@@ -24,9 +24,11 @@ Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.
 - Identidade do app (nome, `identifier`, versão) mora em `src-tauri/tauri.conf.json`;
   `scripts/build-macos-app.sh` deriva `.app`, binário, plist e versão dela.
 - Caminhos de dados usam `app.path().app_config_dir()` (o `identifier` decide), não string fixa.
+  Arquivos: `seed.json`, `secrets.json`, `life-tv.sqlite`.
 - Player externo: `LIFE_TV_PLAYER` (binário, padrão `mpv`) e `LIFE_TV_PLAYER_APP`
   (fallback via `open -a`, padrão `IINA`).
 - UI/persistência: `web/config.mjs` (marca, chaves de storage, conta do seed, nome padrão).
+- Playlists/favs/resume no Tauri: sqlite `life-tv.sqlite` (0600) em `app.path().app_config_dir()`, tabela `kv`. Senhas continuam em `secrets.json`. Preview web segue no `localStorage`.
 
 ## Mapa do web/ (cada módulo < 200 linhas)
 

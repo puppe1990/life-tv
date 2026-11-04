@@ -1,7 +1,10 @@
+import { pickBootPlaylist } from '../src/bootPlaylist.mjs'
 import { discoverPortal } from '../src/discoverPortal.mjs'
 import { createDemoFetch, DEMO_PLAYLIST } from '../src/demoPortal.mjs'
 import { restorePlaylist } from '../src/playlistSecret.mjs'
-import { bindCatalog, createTvShell } from '../src/tvShell.mjs'
+import { seedM3uPlaylists, settingsFormValues } from '../src/seedLists.mjs'
+import { bindCatalog, createTvShell, focusHome, openHomeTile } from '../src/tvShell.mjs'
+import { createM3uClient } from '../src/m3uClient.mjs'
 import { createXtreamClient } from '../src/xtreamClient.mjs'
 import { DEFAULT_PLAYLIST_NAME, SECRET_PLACEHOLDER, SEED_ACCOUNT } from './config.mjs'
 import { byId } from './dom.mjs'
@@ -27,6 +30,7 @@ export function playUrl() {
   const { shell, client, series } = state
   const item = shell.selectedItem
   if (!item) return ''
+  if (item.url) return item.url
   if (shell.catalogKind === 'live') return client.livePlayUrl(item.id)
   if (shell.catalogKind === 'movies') return client.moviePlayUrl(item.id, item.extension)
   if (shell.catalogKind === 'series' && series.key === String(item.id)) return series.url
@@ -115,6 +119,28 @@ export function startDemo() {
     .catch(() => {})
 }
 
+function activatePlaylist(client, playlist) {
+  state.client = client
+  state.playlistId = playlist?.id ?? ''
+  state.shell = createTvShell()
+  return hydrateSettingsForm(playlist)
+}
+
+function applySettingsValues(values) {
+  const name = byId('plName')
+  const portal = byId('plPortal')
+  const user = byId('plUser')
+  const pass = byId('plPass')
+  const m3u = byId('plM3u')
+  const candidates = byId('plCandidates')
+  if (name) name.value = values.name
+  if (portal) portal.value = values.portal
+  if (user) user.value = values.username
+  if (m3u) m3u.value = values.m3u
+  if (candidates) candidates.value = values.candidates
+  if (pass && values.username) pass.placeholder = SECRET_PLACEHOLDER
+}
+
 /** Valida, guarda e ativa a playlist do formulário. */
 export async function savePlaylist(event) {
   event.preventDefault()
@@ -127,9 +153,25 @@ export async function savePlaylist(event) {
       password: byId('plPass').value,
     })
     const stored = await saveSecret(playlist.id, playlist.password)
-    state.client = createXtreamClient({ playlist, fetch: webFetch() })
+    await activatePlaylist(createXtreamClient({ playlist, fetch: webFetch() }), playlist)
     state.errorText = stored ? '' : 'Senha não foi salva: será pedida a cada abertura.'
-    state.shell = createTvShell()
+    state.redraw()
+  } catch (error) {
+    setError(error.message)
+  }
+}
+
+/** Guarda URL M3U própria e ativa o catálogo ao vivo. */
+export async function saveM3uPlaylist(event) {
+  event.preventDefault()
+  try {
+    const playlist = playlistStore.add({
+      kind: 'm3u',
+      name: byId('plName').value || DEFAULT_PLAYLIST_NAME,
+      url: byId('plM3u').value,
+    })
+    await activatePlaylist(createM3uClient({ playlist, fetch: webFetch() }), playlist)
+    clearError()
     state.redraw()
   } catch (error) {
     setError(error.message)
@@ -167,54 +209,114 @@ export async function discover() {
   }
 }
 
-/** Preenche o formulário com a playlist e o seed. */
+/** Preenche o formulário com a playlist e o seed (portal/usuário/M3U). */
 export async function hydrateSettingsForm(playlist) {
-  if (playlist) {
-    byId('plName').value = playlist.name ?? ''
-    byId('plPortal').value = playlist.portal ?? ''
-    byId('plUser').value = playlist.username ?? ''
-    byId('plPass').placeholder = SECRET_PLACEHOLDER
-  }
-  const seed = await readSeed()
-  if (Array.isArray(seed?.candidates)) byId('plCandidates').value = seed.candidates.join('\n')
+  applySettingsValues(settingsFormValues({ playlist, seed: await readSeed() }))
 }
 
-/** Cria a playlist a partir do seed local, se houver senha. */
-export async function bootSeed() {
-  const seed = await readSeed()
-  if (!seed || !seed.username) return false
-  const password = await readSecret(SEED_ACCOUNT)
-  if (!password) return false
-  const playlist = playlistStore.add({
+function sameXc(item, seed) {
+  return item.kind === 'xc' && item.username === seed.username && item.portal === seed.portal
+}
+
+function publishRefusal(error) {
+  if (!error) return
+  setError(`${error.message}. Confira usuário e senha em Ajustes ou cole uma lista M3U.`)
+}
+
+function seedDraft(seed, password) {
+  return {
     kind: 'xc',
     name: seed.name ?? DEFAULT_PLAYLIST_NAME,
     portal: seed.portal,
     username: seed.username,
     password,
-  })
-  await saveSecret(playlist.id, password)
-  clearError()
-  await hydrateSettingsForm(playlist)
-  state.client = createXtreamClient({ playlist, fetch: webFetch() })
-  state.shell = createTvShell()
+  }
+}
+
+async function activatePicked(picked) {
+  if (picked.kind === 'm3u') {
+    await activatePlaylist(
+      createM3uClient({ playlist: picked.playlist, fetch: webFetch() }),
+      picked.playlist,
+    )
+    state.shell = openHomeTile(focusHome(state.shell, 'live'))
+    await fillCatalog()
+    state.redraw()
+    return true
+  }
+  if (picked.kind !== 'xc') {
+    publishRefusal(picked.error)
+    await hydrateSettingsForm(picked.playlist)
+    return false
+  }
+  await activatePlaylist(picked.client, picked.playlist)
   state.redraw()
   return true
 }
 
-/** Entra na primeira playlist salva com senha disponível. */
-export async function bootSaved() {
-  for (const saved of playlistStore.list()) {
-    if (saved.kind !== 'xc') continue
-    const password = saved.password ?? (await readSecret(saved.id))
-    if (!password) continue
-    state.client = createXtreamClient({
-      playlist: saved.password ? saved : restorePlaylist(saved, password),
-      fetch: webFetch(),
-    })
-    await hydrateSettingsForm(saved)
-    state.shell = createTvShell()
-    state.redraw()
-    return true
+/** Importa as M3U do seed e ativa a primeira. */
+export async function bootSeedLists() {
+  const lists = seedM3uPlaylists(await readSeed())
+  if (lists.length === 0) return false
+  const have = new Set(
+    playlistStore
+      .list()
+      .filter((item) => item.kind === 'm3u')
+      .map((item) => item.url),
+  )
+  for (const item of lists) {
+    if (!have.has(item.url)) playlistStore.add(item)
   }
-  return false
+  return activatePicked(
+    await pickBootPlaylist(playlistStore.list(), { fetch: webFetch(), readSecret }),
+  )
+}
+
+/** Troca a playlist guardada e abre o ao vivo. */
+export async function openSavedPlaylist(id) {
+  const playlist = playlistStore.list().find((item) => item.id === id)
+  if (!playlist) return
+  if (playlist.kind === 'm3u') {
+    await activatePlaylist(createM3uClient({ playlist, fetch: webFetch() }), playlist)
+  } else if (playlist.kind === 'xc') {
+    const ok = await activatePicked(
+      await pickBootPlaylist([playlist], { fetch: webFetch(), readSecret }),
+    )
+    if (!ok) return
+  } else return
+  state.shell = openHomeTile(focusHome(createTvShell(), 'live'))
+  await fillCatalog()
+}
+
+async function rememberSeed(draft, client, password) {
+  const playlist = playlistStore.add(draft)
+  await saveSecret(playlist.id, password)
+  clearError()
+  await activatePlaylist(client, playlist)
+  state.redraw()
+  return true
+}
+
+/** Cria a playlist a partir do seed local, se o portal aceitar a conta. */
+export async function bootSeed() {
+  const seed = await readSeed()
+  if (!seed || !seed.username) return false
+  const password = await readSecret(SEED_ACCOUNT)
+  if (!password) return false
+  if (playlistStore.list().some((item) => sameXc(item, seed))) return false
+  const draft = seedDraft(seed, password)
+  const picked = await pickBootPlaylist([draft], { fetch: webFetch() })
+  if (picked.kind !== 'xc') {
+    publishRefusal(picked.error)
+    await hydrateSettingsForm()
+    return false
+  }
+  return rememberSeed(draft, picked.client, password)
+}
+
+/** Entra na M3U salva, ou no primeiro XC que o portal aceita. */
+export async function bootSaved() {
+  return activatePicked(
+    await pickBootPlaylist(playlistStore.list(), { fetch: webFetch(), readSecret }),
+  )
 }

@@ -1,13 +1,22 @@
 const MIN_RESUME_MS = 10_000
 const DONE_RATIO = 0.9
 
+function loadResumes(byId, stored) {
+  byId.clear()
+  for (const [id, value] of Object.entries(stored ?? {})) byId.set(id, value)
+}
+
 /** Resume: grava entre 10s e 90% da duração (padrão do player FlexTV). */
 export function createResumeStore({ bucket = null } = {}) {
-  const byId = new Map(Object.entries(bucket?.read() ?? {}))
+  const byId = new Map()
+  loadResumes(byId, bucket?.read())
   function persist() {
     bucket?.write(Object.fromEntries(byId))
   }
   return {
+    hydrate() {
+      loadResumes(byId, bucket?.read())
+    },
     save({ streamId, positionMs, durationMs }) {
       const key = String(streamId)
       if (positionMs < MIN_RESUME_MS) return

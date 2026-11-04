@@ -59,3 +59,10 @@ export function tabClass(active) {
 export function actionClass() {
   return 'cursor-pointer border-0 bg-action px-4 py-2 text-[clamp(14px,1vw,20px)] text-ink md:px-6 md:py-3'
 }
+
+export function playlistChipClass(selected) {
+  if (selected) {
+    return 'cursor-pointer border-0 bg-action px-4 py-2 text-[clamp(14px,1vw,20px)] text-ink'
+  }
+  return 'cursor-pointer border border-line bg-transparent px-4 py-2 text-[clamp(14px,1vw,20px)] text-ink'
+}

@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app_paths;
+mod db;
 mod player;
 mod secrets;
 mod seed;
@@ -31,6 +32,18 @@ fn seed_read(app: AppHandle) -> Result<Option<String>, String> {
     seed::read(&app)
 }
 
+/// Lê um valor JSON do sqlite local.
+#[tauri::command]
+fn db_get(app: AppHandle, key: String) -> Result<Option<String>, String> {
+    db::get(&app, &key)
+}
+
+/// Grava um valor JSON no sqlite local.
+#[tauri::command]
+fn db_set(app: AppHandle, key: String, value: String) -> Result<(), String> {
+    db::set(&app, &key, &value)
+}
+
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_http::init())
@@ -38,7 +51,9 @@ fn main() {
             play_sidecar,
             secret_set,
             secret_get,
-            seed_read
+            seed_read,
+            db_get,
+            db_set
         ])
         .run(tauri::generate_context!())
         .expect("falha ao abrir a janela");

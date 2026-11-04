@@ -35,15 +35,28 @@ function addM3u(input) {
   return playlist
 }
 
+function nextSeq(items) {
+  return items.reduce((max, item) => Math.max(max, Number(String(item.id).slice(3)) || 0), 0)
+}
+
+function replaceItems(items, saved) {
+  items.length = 0
+  if (Array.isArray(saved)) items.push(...saved)
+}
+
 /** Playlist XC/M3U local. Campo `mac` do FlexTV não é gravado. */
 export function createPlaylistStore({ bucket = null } = {}) {
-  const saved = bucket?.read()
-  const items = Array.isArray(saved) ? saved : []
-  let seq = items.reduce((max, item) => Math.max(max, Number(String(item.id).slice(3)) || 0), 0)
+  const items = []
+  replaceItems(items, bucket?.read())
+  let seq = nextSeq(items)
   function persist() {
     bucket?.write(items)
   }
   return {
+    hydrate() {
+      replaceItems(items, bucket?.read())
+      seq = nextSeq(items)
+    },
     add(input) {
       if (!input || (input.kind !== 'xc' && input.kind !== 'm3u')) {
         throw new Error(`playlist recusada: recebido kind ${input?.kind}, esperado xc ou m3u`)

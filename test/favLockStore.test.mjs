@@ -42,6 +42,25 @@ function createStorage() {
   }
 }
 
+test('hydrate relê favoritos depois do load assíncrono', () => {
+  let stored = { favs: [], locks: {} }
+  const bucket = {
+    read() {
+      return stored
+    },
+    write(value) {
+      stored = value
+    },
+  }
+  const store = createFavLockStore({ bucket })
+  const streamId = String(faker.number.int({ min: 1000, max: 99_999 }))
+  assert.equal(store.isFav(streamId), false)
+  stored = { favs: [streamId], locks: { [streamId]: '1234' } }
+  store.hydrate()
+  assert.equal(store.isFav(streamId), true)
+  assert.equal(store.isLocked(streamId), true)
+})
+
 test('hidrata favoritos e locks do bucket', () => {
   const storage = createStorage()
   const streamId = faker.number.int({ min: 1000, max: 99_999 })

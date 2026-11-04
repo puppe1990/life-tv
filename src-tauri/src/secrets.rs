@@ -17,16 +17,13 @@ fn read_map(app: &tauri::AppHandle) -> Result<BTreeMap<String, String>, String> 
     }
 }
 
-fn write_map(
-    app: &tauri::AppHandle,
-    secrets: &BTreeMap<String, String>,
-) -> Result<(), String> {
+fn write_map(app: &tauri::AppHandle, secrets: &BTreeMap<String, String>) -> Result<(), String> {
     let path = data_file(app, SECRETS_FILE)?;
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|error| format!("secret recusado: {error}"))?;
     }
-    let body =
-        serde_json::to_string_pretty(secrets).map_err(|error| format!("secret recusado: {error}"))?;
+    let body = serde_json::to_string_pretty(secrets)
+        .map_err(|error| format!("secret recusado: {error}"))?;
     let mut file = std::fs::OpenOptions::new()
         .create(true)
         .write(true)
