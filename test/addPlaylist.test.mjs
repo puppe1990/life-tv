@@ -82,6 +82,32 @@ function createStorage() {
   }
 }
 
+test('hydrate relê o bucket e continua a sequência de ids', () => {
+  let stored = null
+  const bucket = {
+    read() {
+      return stored
+    },
+    write(value) {
+      stored = value
+    },
+  }
+  const store = createPlaylistStore({ bucket })
+  assert.equal(store.list().length, 0)
+  stored = [
+    {
+      id: 'pl-3',
+      kind: 'm3u',
+      name: fakerPlaylistName(),
+      url: `${fakerPortal({ protocol: 'https', port: 443 })}/br.m3u`,
+    },
+  ]
+  store.hydrate()
+  assert.equal(store.list().length, 1)
+  assert.equal(store.list()[0].id, 'pl-3')
+  assert.equal(store.add({ kind: 'm3u', name: 'PT', url: 'https://x.test/pt.m3u' }).id, 'pl-4')
+})
+
 test('reabre a store com a playlist XC gravada', () => {
   const storage = createStorage()
   const portal = `http://${faker.internet.domainName()}:8080`

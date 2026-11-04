@@ -92,6 +92,8 @@
         <p class="mb-6 max-w-[46ch] text-[20px] text-mute">
           Playlist própria. Sem MAC, sem VPN, sem catálogo de terceiros.
         </p>
+        <p class="mb-2 text-[18px] text-mute">Playlists salvas</p>
+        <ul id="savedPlaylists" class="mb-6 flex list-none flex-wrap gap-2 p-0"></ul>
         <form id="playlistForm" class="grid w-full max-w-[680px] gap-4">
           <label class="grid gap-2 text-[18px] text-mute"
             >Nome
@@ -131,6 +133,15 @@
             />
           </label>
           <label class="grid gap-2 text-[18px] text-mute"
+            >Lista M3U
+            <input
+              id="plM3u"
+              name="m3u"
+              placeholder="https://exemplo.com/lista.m3u"
+              class="w-full border border-line bg-well px-4 py-3 font-sans text-[clamp(16px,1.2vw,22px)] text-ink"
+            />
+          </label>
+          <label class="grid gap-2 text-[18px] text-mute"
             >Portais para descobrir (um por linha)
             <textarea
               id="plCandidates"
@@ -146,6 +157,13 @@
               class="cursor-pointer border-0 bg-action px-5 py-3 text-[clamp(16px,1.2vw,22px)]"
             >
               Guardar XC
+            </button>
+            <button
+              type="button"
+              id="m3uBtn"
+              class="cursor-pointer border border-line bg-transparent px-6 py-3 text-[22px] text-ink"
+            >
+              Guardar M3U
             </button>
             <button
               type="button"

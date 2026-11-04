@@ -1,10 +1,27 @@
+import { playlistChipClass } from '../src/tvSkin.mjs'
 import { renderCatalog, renderHome, renderTabs } from './catalogView.mjs'
 import { byId } from './dom.mjs'
 import { renderPlayer } from './playerView.mjs'
 import { state } from './state.mjs'
+import { playlistStore } from './stores.mjs'
+
+function renderSavedPlaylists() {
+  const list = byId('savedPlaylists')
+  if (!list) return
+  list.replaceChildren()
+  for (const playlist of playlistStore.list()) {
+    const button = document.createElement('button')
+    button.type = 'button'
+    button.dataset.playlistId = playlist.id
+    button.textContent = playlist.name
+    button.className = playlistChipClass(playlist.id === state.playlistId)
+    list.append(button)
+  }
+}
 
 function renderSettings() {
   byId('settings').hidden = state.shell.screen !== 'settings'
+  renderSavedPlaylists()
 }
 
 /** Redesenha todas as seções visíveis a partir do estado. */

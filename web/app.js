@@ -2,9 +2,20 @@ import { createTvShell, focusHome, handleKey, openHomeTile } from '../src/tvShel
 import { BRAND } from './config.mjs'
 import { byId } from './dom.mjs'
 import { renderAll } from './render.mjs'
-import { bootSaved, bootSeed, discover, fillCatalog, savePlaylist, startDemo } from './session.mjs'
+import {
+  bootSaved,
+  bootSeed,
+  bootSeedLists,
+  discover,
+  fillCatalog,
+  hydrateSettingsForm,
+  openSavedPlaylist,
+  saveM3uPlaylist,
+  savePlaylist,
+  startDemo,
+} from './session.mjs'
 import { setRedraw, state } from './state.mjs'
-import { playlistStore } from './stores.mjs'
+import { loadStores, playlistStore } from './stores.mjs'
 
 setRedraw(renderAll)
 
@@ -62,16 +73,26 @@ async function boot() {
   document.addEventListener('keydown', onKey)
   byId('demoBtn').addEventListener('click', startDemo)
   byId('discoverBtn').addEventListener('click', discover)
+  byId('m3uBtn').addEventListener('click', saveM3uPlaylist)
   byId('playlistForm').addEventListener('submit', savePlaylist)
   byId('search').addEventListener('input', renderAll)
   wireHomeTiles()
   wireTabs()
+  byId('savedPlaylists')?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-playlist-id]')
+    if (button) void openSavedPlaylist(button.dataset.playlistId)
+  })
+  await loadStores()
   if (await bootSaved()) return
+  if (await bootSeedLists()) return
   if (await bootSeed()) return
+  const warning = state.errorText
   startDemo()
-  if (playlistStore.list().length > 0) {
+  if (warning) state.errorText = warning
+  else if (playlistStore.list().length > 0) {
     state.errorText = 'Playlist salva sem senha guardada: cadastre de novo.'
   }
+  await hydrateSettingsForm()
   renderAll()
 }
 

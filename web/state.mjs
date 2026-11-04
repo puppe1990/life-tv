@@ -7,6 +7,7 @@ export const state = {
   errorText: '',
   series: { key: '', url: '' },
   featured: null,
+  playlistId: '',
   epg: { key: '', listings: [] },
   redraw: () => {},
 }

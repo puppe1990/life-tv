@@ -4,6 +4,7 @@ import { parseShortEpg } from './parseShortEpg.mjs'
 import { parseXmltv } from './parseXmltv.mjs'
 import { parseVodInfo } from './parseVodInfo.mjs'
 import { parseXtreamLogin } from './parseXtreamLogin.mjs'
+import { describeXtreamRefusal } from './xtreamRefusal.mjs'
 import {
   liveStreamUrl,
   movieStreamUrl,
@@ -14,25 +15,24 @@ import {
   xmltvUrl,
 } from './xtreamUrls.mjs'
 
+async function readBody(res, url) {
+  const raw = await res.text()
+  if (!res.ok) throw new Error(describeXtreamRefusal({ status: res.status, raw, url }))
+  return raw
+}
+
 async function getJson(fetchFn, cred, action, params = null) {
   const url = playerApiUrl({ ...cred, action, params })
-  const res = await fetchFn(url)
-  if (!res.ok) {
-    throw new Error(
-      `xtream recusado: recebido HTTP ${res.status} em ${redactUrl(url)}, esperado 200`,
-    )
+  const raw = await readBody(await fetchFn(url), url)
+  try {
+    return JSON.parse(raw)
+  } catch {
+    throw new Error(`xtream recusado: recebido corpo não-JSON em ${redactUrl(url)}, esperado JSON`)
   }
-  return res.json()
 }
 
 async function getText(fetchFn, url) {
-  const res = await fetchFn(url)
-  if (!res.ok) {
-    throw new Error(
-      `xtream recusado: recebido HTTP ${res.status} em ${redactUrl(url)}, esperado 200`,
-    )
-  }
-  return res.text()
+  return readBody(await fetchFn(url), url)
 }
 
 function decodeBase64Text(value) {
@@ -61,6 +61,15 @@ export function createXtreamClient({ playlist, fetch: fetchFn }) {
   return {
     async login() {
       return parseXtreamLogin(await getJson(fetchFn, cred))
+    },
+    async ping() {
+      try {
+        return await this.login()
+      } catch (error) {
+        if (!/HTTP 404/.test(error.message)) throw error
+        await getJson(fetchFn, cred, 'get_live_streams')
+        return { status: 'Active' }
+      }
     },
     async liveCatalog() {
       const [categories, streams] = await Promise.all([

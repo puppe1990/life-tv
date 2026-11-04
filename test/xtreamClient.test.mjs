@@ -151,3 +151,55 @@ test('demo entrega episódios da série', async () => {
   assert.equal(episodes.length, 1)
   assert.equal(episodes[0].extension, 'mp4')
 })
+
+function jsonResponse(status, body) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  })
+}
+
+test('liveCatalog inclui user_not_found do JSON 403', async () => {
+  const xc = makeXc()
+  const client = createXtreamClient({
+    playlist: { kind: 'xc', portal: xc.portal, username: xc.username, password: xc.password },
+    fetch: async () => jsonResponse(403, { error: 'user_not_found' }),
+  })
+  await assert.rejects(
+    () => client.liveCatalog(),
+    (error) => {
+      assert.match(error.message, /user_not_found/)
+      assert.match(error.message, /HTTP 403/)
+      assert.equal(error.message.includes(new URL(xc.portal).host), true)
+      return true
+    },
+  )
+})
+
+test('ping aceita login 404 quando get_live_streams devolve lista', async () => {
+  const xc = makeXc()
+  const client = createXtreamClient({
+    playlist: { kind: 'xc', portal: xc.portal, username: xc.username, password: xc.password },
+    fetch: async (url) => {
+      const action = new URL(url).searchParams.get('action')
+      if (!action) return new Response('<html>404</html>', { status: 404 })
+      if (action === 'get_live_streams') return jsonResponse(200, [])
+      return jsonResponse(404, {})
+    },
+  })
+  const session = await client.ping()
+  assert.equal(session.status, 'Active')
+})
+
+test('ping recusa 403 user_not_found depois do login 404', async () => {
+  const xc = makeXc()
+  const client = createXtreamClient({
+    playlist: { kind: 'xc', portal: xc.portal, username: xc.username, password: xc.password },
+    fetch: async (url) => {
+      const action = new URL(url).searchParams.get('action')
+      if (!action) return new Response('<html>404</html>', { status: 404 })
+      return jsonResponse(403, { error: 'user_not_found' })
+    },
+  })
+  await assert.rejects(() => client.ping(), /user_not_found/)
+})

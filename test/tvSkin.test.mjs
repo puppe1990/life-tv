@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
   actionClass,
+  playlistChipClass,
   catCountClass,
   catItemClass,
   catListClass,
@@ -49,6 +50,11 @@ test('abas usam amarelo quando ativas', () => {
 test('ação é botão cheio azul', () => {
   assert.match(actionClass(), /bg-action/)
   assert.match(actionClass(), /cursor-pointer/)
+})
+
+test('chip da playlist ativa usa o azul de ação', () => {
+  assert.match(playlistChipClass(true), /bg-action/)
+  assert.match(playlistChipClass(false), /border-line/)
 })
 
 test('player usa URL em cinza e título sem serifa', () => {
