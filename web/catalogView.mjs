@@ -1,7 +1,15 @@
 import { withAllCategory } from '../src/allCategory.mjs'
 import { filterCategories } from '../src/catalogFilter.mjs'
+import {
+  CHANNEL_CARD_PAGE,
+  channelLayoutLabel,
+  growCardLimit,
+  itemsToPaint,
+  nextChannelLayout,
+} from '../src/channelLayout.mjs'
 import { channelMark } from '../src/channelMark.mjs'
 import { epgProgress } from '../src/epgProgress.mjs'
+import { nowAndNext } from '../src/xmltvNowNext.mjs'
 import { HOME_TILES } from '../src/tvShell.mjs'
 import { itemFromWatchCard, watchCardFromItem } from '../src/watchCard.mjs'
 import {
@@ -10,11 +18,14 @@ import {
   catalogGridClass,
   catalogListsClass,
   catCountClass,
+  favToggleClass,
   catItemClass,
   catListClass,
   ghostClass,
+  itemCardClass,
   itemClass,
   itemListClass,
+  itemsPaneClass,
   liveBadgeClass,
   playerNoteClass,
   playerTitleClass,
@@ -23,8 +34,9 @@ import {
 } from '../src/tvSkin.mjs'
 import { byId, el } from './dom.mjs'
 import { renderHomeRows } from './homeRows.mjs'
-import { ICON_HEART, ICON_PLAY, iconSvg } from './icons.mjs'
+import { ICON_GRID, ICON_HEART, ICON_LIST, ICON_PLAY, iconSvg } from './icons.mjs'
 import { ensureEpg, epgBlock } from './playerView.mjs'
+import { fillGuide } from './session.mjs'
 import { state } from './state.mjs'
 import { favStore, historyStore } from './stores.mjs'
 
@@ -160,6 +172,7 @@ function currentCategory() {
 export function selectCategory(index) {
   const category = state.shell.catalog?.categories?.[index]
   if (!category) return
+  state.itemLimit = CHANNEL_CARD_PAGE
   state.shell = {
     ...state.shell,
     categoryIndex: index,
@@ -200,42 +213,159 @@ function renderCategories(categories) {
 }
 
 function listingOf(item) {
+  const fromGuide = nowAndNext(state.guide?.programs, {
+    channelId: item.epgChannelId,
+    now: state.guide?.now ?? Date.now(),
+  })
+  if (fromGuide) return fromGuide
   if (state.epg.key !== String(item.id)) return null
   return state.epg.listings[0] ?? null
 }
 
+function liveLayout() {
+  return state.channelLayout === 'card' ? 'card' : 'list'
+}
+
+function renderItemsToolbar() {
+  const bar = byId('items-toolbar')
+  if (state.shell.catalogKind !== 'live') {
+    bar.hidden = true
+    bar.replaceChildren()
+    return
+  }
+  bar.hidden = false
+  bar.className = 'flex shrink-0 justify-end'
+  const layout = liveLayout()
+  const button = actionButton(
+    ghostClass(),
+    layout === 'card' ? ICON_LIST : ICON_GRID,
+    channelLayoutLabel(layout),
+    () => {
+      state.channelLayout = nextChannelLayout(layout)
+      state.itemLimit = CHANNEL_CARD_PAGE
+      state.redraw()
+    },
+  )
+  button.dataset.channelLayout = layout
+  bar.replaceChildren(button)
+}
+
+function favToggle(item, overlay = false) {
+  const on = favStore.isFav(item.id)
+  const button = el('button', favToggleClass(on, overlay))
+  button.type = 'button'
+  button.dataset.listFav = String(item.id)
+  button.setAttribute('aria-pressed', String(on))
+  button.setAttribute('aria-label', on ? 'Remover favorito' : 'Favoritar')
+  button.append(iconSvg(ICON_HEART, 16))
+  button.addEventListener('click', (event) => {
+    event.stopPropagation()
+    favStore.toggleFav(item.id, watchCardFromItem(item, state.shell.catalogKind))
+    state.redraw()
+  })
+  return button
+}
+
+function renderChannelRow(item, index, selected, live) {
+  const row = el('li', itemClass(selected))
+  row.setAttribute('aria-selected', String(selected))
+  row.append(
+    el(
+      'span',
+      `w-7 shrink-0 font-mono text-[12px] font-bold ${selected ? 'text-accent' : 'text-mute'}`,
+      String(index + 1).padStart(2, '0'),
+    ),
+    itemMark(item),
+  )
+  const body = el('div', 'min-w-0 flex-1')
+  body.append(el('span', 'block truncate font-display text-[15px] font-bold', item.name))
+  const listing = live ? listingOf(item) : null
+  if (listing) {
+    body.append(el('p', 'm-0 truncate text-[12px] text-mute', listing.title))
+    body.append(progressBar(epgProgress(listing)))
+  }
+  row.append(body)
+  if (live) row.append(favToggle(item))
+  if (live && selected) row.append(el('span', liveBadgeClass(), 'No ar'))
+  row.addEventListener('click', () => selectItem(item))
+  return row
+}
+
+function renderChannelCard(item, index, selected, live) {
+  const card = el('li', itemCardClass(selected))
+  card.setAttribute('aria-selected', String(selected))
+  const art = el('div', 'relative aspect-square min-h-28 bg-well')
+  if (item.icon) {
+    const image = el('img', 'h-full w-full object-contain p-3')
+    image.src = item.icon
+    image.alt = ''
+    image.loading = 'lazy'
+    image.decoding = 'async'
+    art.append(image)
+  } else {
+    art.append(
+      el(
+        'div',
+        'flex h-full items-center justify-center font-display text-[28px] font-black text-accent',
+        channelMark(item.name),
+      ),
+    )
+  }
+  art.append(
+    el(
+      'span',
+      'absolute top-2 left-2 font-mono text-[11px] font-bold text-mute',
+      String(index + 1).padStart(2, '0'),
+    ),
+  )
+  if (live && selected) {
+    art.append(el('span', `${liveBadgeClass()} absolute top-2 right-2`, 'No ar'))
+  }
+  art.append(favToggle(item, true))
+  const caption = el(
+    'span',
+    'block truncate px-2 pt-2 font-display text-[13px] font-bold',
+    item.name,
+  )
+  card.append(art, caption)
+  const listing = live ? listingOf(item) : null
+  if (listing) {
+    card.append(el('p', 'm-0 truncate px-2 pb-2 text-[11px] text-mute', listing.title))
+  } else {
+    caption.classList.add('pb-2')
+  }
+  card.addEventListener('click', () => selectItem(item))
+  return card
+}
+
 function renderItems(categories) {
   const list = byId('items')
-  list.className = itemListClass(state.shell.catalogKind)
-  list.replaceChildren()
+  const kind = state.shell.catalogKind
+  const layout = kind === 'live' ? liveLayout() : 'list'
+  list.className = itemListClass(kind, layout)
   const category = categories.find((entry) => entry.sourceIndex === state.shell.categoryIndex)
-  const live = state.shell.catalogKind === 'live'
-  for (const [index, item] of (category?.items ?? []).entries()) {
+  const all = category?.items ?? []
+  const shown = itemsToPaint(all, layout, state.itemLimit)
+  const live = kind === 'live'
+  const paint = layout === 'card' ? renderChannelCard : renderChannelRow
+  const top = list.scrollTop
+  list.replaceChildren()
+  for (const [index, item] of shown.entries()) {
     const selected = item.id === state.shell.selectedItem?.id
-    const row = el('li', itemClass(selected))
-    row.setAttribute('aria-selected', String(selected))
-    row.append(
-      el(
-        'span',
-        `w-7 shrink-0 font-mono text-[12px] font-bold ${selected ? 'text-accent' : 'text-mute'}`,
-        String(index + 1).padStart(2, '0'),
-      ),
-      itemMark(item),
-    )
-    const body = el('div', 'min-w-0 flex-1')
-    body.append(el('span', 'block truncate font-display text-[15px] font-bold', item.name))
-    const listing = live ? listingOf(item) : null
-    if (listing) {
-      body.append(el('p', 'm-0 truncate text-[12px] text-mute', listing.title))
-      body.append(progressBar(epgProgress(listing)))
-    }
-    row.append(body)
-    if (live && selected) {
-      row.append(el('span', liveBadgeClass(), 'No ar'))
-    }
-    row.addEventListener('click', () => selectItem(item))
-    list.append(row)
+    list.append(paint(item, index, selected, live))
   }
+  list.scrollTop = top
+  list.onscroll =
+    layout === 'card'
+      ? () => {
+          const remain = list.scrollHeight - list.scrollTop - list.clientHeight
+          if (remain > 240) return
+          const next = growCardLimit(state.itemLimit, all.length)
+          if (next === state.itemLimit) return
+          state.itemLimit = next
+          renderItems(categories)
+        }
+      : null
 }
 
 function renderStage(item) {
@@ -351,6 +481,7 @@ export function renderCatalog() {
   byId('catalog-grid').className = catalogGridClass(kind)
   byId('detail').className = catalogDetailClass(kind)
   byId('catalog-lists').className = catalogListsClass(kind)
+  byId('items-pane').className = itemsPaneClass(kind)
   const catalogCats =
     kind === 'live'
       ? withAllCategory(state.shell.catalog?.categories)
@@ -360,6 +491,8 @@ export function renderCatalog() {
   }
   const categories = filterCategories(catalogCats, byId('search')?.value)
   renderCategories(categories)
+  renderItemsToolbar()
+  if (kind === 'live') void fillGuide()
   renderItems(categories)
   if (kind === 'live') {
     byId('shelf').replaceChildren()

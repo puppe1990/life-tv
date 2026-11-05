@@ -10,7 +10,10 @@ const dom = new JSDOM(`<!doctype html><body>
       <aside id="detail"></aside>
       <div id="catalog-lists">
         <ul id="categories"></ul>
-        <ul id="items"></ul>
+        <div id="items-pane">
+          <div id="items-toolbar"></div>
+          <ul id="items"></ul>
+        </div>
       </div>
     </div>
     <div id="shelf"></div>
@@ -26,6 +29,7 @@ globalThis.document = dom.window.document
 const { setRedraw, state } = await import('../web/state.mjs')
 const { renderCatalog, renderHome, renderTabs, selectCategory, selectItem } =
   await import('../web/catalogView.mjs')
+const { CHANNEL_CARD_PAGE } = await import('../src/channelLayout.mjs')
 const { createTvShell } = await import('../src/tvShell.mjs')
 const { favStore, historyStore } = await import('../web/stores.mjs')
 
@@ -33,6 +37,9 @@ beforeEach(() => {
   faker.seed(57)
   dom.window.document.getElementById('search').value = ''
   state.shell = createTvShell()
+  state.channelLayout = 'list'
+  state.itemLimit = CHANNEL_CARD_PAGE
+  state.guide = { programs: [] }
   state.redraw = () => {}
   historyStore.clear()
   favStore.clear()
@@ -274,4 +281,135 @@ test('clicar num canal ao vivo seleciona e abre o player', () => {
   document.querySelectorAll('#items li')[1].click()
   assert.equal(state.shell.selectedItem.name, 'Band Sports')
   assert.equal(state.shell.screen, 'player')
+})
+
+test('listagem ao vivo favorita o canal sem abrir o player', () => {
+  const first = { id: 521, name: 'ESPN 1 HD', icon: '' }
+  const second = { id: 522, name: 'Band Sports', icon: '' }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [{ id: '1', name: 'Esportes', items: [first, second] }] },
+    selectedItem: first,
+  }
+  renderCatalog()
+  const fav = document.querySelector('[data-list-fav="521"]')
+  assert.equal(fav.getAttribute('aria-label'), 'Favoritar')
+  assert.equal(fav.getAttribute('aria-pressed'), 'false')
+  setRedraw(renderCatalog)
+  fav.click()
+  assert.equal(favStore.isFav(521), true)
+  assert.equal(state.shell.screen, 'catalog')
+  const on = document.querySelector('[data-list-fav="521"]')
+  assert.equal(on.getAttribute('aria-pressed'), 'true')
+  assert.equal(on.getAttribute('aria-label'), 'Remover favorito')
+})
+
+test('modo card também mostra o favorito no canal', () => {
+  const first = { id: 521, name: 'ESPN 1 HD', icon: '' }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [{ id: '1', name: 'Esportes', items: [first] }] },
+    selectedItem: first,
+  }
+  state.channelLayout = 'card'
+  renderCatalog()
+  assert.equal(document.querySelector('[data-list-fav="521"]').tagName, 'BUTTON')
+})
+
+test('Filmes na listagem não ganha o favorito da linha ao vivo', () => {
+  const { categories, first } = moviesCatalog()
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'movies',
+    catalog: { kind: 'movies', categories },
+    selectedItem: first,
+  }
+  renderCatalog()
+  assert.equal(document.querySelector('[data-list-fav]'), null)
+})
+
+test('botão Cards troca a listagem ao vivo para grade', () => {
+  const first = { id: 521, name: 'ESPN 1 HD', icon: '' }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [{ id: '1', name: 'Esportes', items: [first] }] },
+    selectedItem: first,
+  }
+  renderCatalog()
+  const toggle = document.querySelector('[data-channel-layout]')
+  assert.equal(toggle.textContent.trim(), 'Cards')
+  assert.equal(document.getElementById('items').className.includes('flex-col'), true)
+  setRedraw(renderCatalog)
+  toggle.click()
+  assert.equal(state.channelLayout, 'card')
+  assert.match(document.getElementById('items').className, /flex-wrap/)
+  assert.match(document.getElementById('items').className, /w-full/)
+  assert.match(document.querySelector('[data-channel-layout]').textContent, /Lista/)
+  assert.match(document.querySelector('#items li').className, /flex-col/)
+  assert.match(document.querySelector('#items li').className, /w-\[calc/)
+})
+
+test('modo card não pinta milhares de canais de uma vez', () => {
+  const items = Array.from({ length: 80 }, (_, index) => ({
+    id: 1000 + index,
+    name: `Canal ${index + 1}`,
+    icon: '',
+  }))
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [{ id: '1', name: 'Todos', items }] },
+    selectedItem: items[0],
+  }
+  state.channelLayout = 'card'
+  renderCatalog()
+  assert.equal(document.querySelectorAll('#items li').length, CHANNEL_CARD_PAGE)
+  assert.match(document.querySelector('#items li').textContent, /Canal 1/)
+})
+
+test('listagem ao vivo mostra o programa xmltv no ar', () => {
+  const channel = faker.string.alpha(6)
+  const title = faker.word.words(3)
+  const first = { id: 521, name: 'ESPN 1 HD', icon: '', epgChannelId: channel }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [{ id: '1', name: 'Esportes', items: [first] }] },
+    selectedItem: first,
+  }
+  state.guide = {
+    programs: [
+      {
+        channelId: channel,
+        start: '20261030180000 +0000',
+        stop: '20261030220000 +0000',
+        title,
+      },
+    ],
+    now: Date.UTC(2026, 9, 30, 19, 0, 0),
+  }
+  renderCatalog()
+  assert.equal(document.querySelector('#items li').textContent.includes(title), true)
+})
+
+test('Filmes não mostra o botão de Cards', () => {
+  const { categories, first } = moviesCatalog()
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'movies',
+    catalog: { kind: 'movies', categories },
+    selectedItem: first,
+  }
+  renderCatalog()
+  assert.equal(document.querySelector('[data-channel-layout]'), null)
 })

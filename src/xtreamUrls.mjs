@@ -6,9 +6,17 @@
 /** UA do player_api que o painel XC aceita. */
 export const XTREAM_USER_AGENT = 'Life TV/0.1'
 
+/** UA do fetch HLS (Smarters PlayerUserAgent). O player_api continua Life TV/0.1. */
+export const HLS_PLAYER_USER_AGENT = 'iptv_smarters_player_lite'
+
 /** Init de fetch com o UA que o player_api aceita. */
 export function xtreamFetchInit(init = {}) {
   return { ...init, headers: { ...(init.headers ?? {}), 'User-Agent': XTREAM_USER_AGENT } }
+}
+
+/** Init de fetch do manifesto/segmentos HLS. */
+export function hlsFetchInit(init = {}) {
+  return { ...init, headers: { ...(init.headers ?? {}), 'User-Agent': HLS_PLAYER_USER_AGENT } }
 }
 
 export function normalizePortal(url) {

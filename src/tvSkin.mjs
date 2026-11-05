@@ -50,11 +50,26 @@ export function catListClass(kind) {
   return 'm-0 flex list-none flex-nowrap gap-2 overflow-x-auto p-0'
 }
 
-export function itemListClass(kind) {
+export function itemListClass(kind, layout = 'list') {
+  if (kind === 'live' && layout === 'card') {
+    return 'm-0 flex min-h-0 min-w-0 w-full flex-1 list-none flex-wrap content-start gap-3 overflow-y-auto p-0'
+  }
   if (kind === 'live') {
-    return 'm-0 flex h-full min-h-0 list-none flex-col gap-2 overflow-y-auto p-0'
+    return 'm-0 flex h-full min-h-0 min-w-0 w-full list-none flex-col gap-2 overflow-y-auto p-0'
   }
   return 'm-0 flex min-h-0 max-h-[70vh] list-none flex-col gap-2 overflow-y-auto p-0'
+}
+
+export function itemCardClass(selected) {
+  const base =
+    'flex w-[calc((100%-1.5rem)/3)] min-w-0 cursor-pointer flex-col overflow-hidden rounded-lg bg-panel text-left ring-1 ring-transparent xl:w-[calc((100%-2.25rem)/4)]'
+  if (selected) return `${base} ring-accent bg-row`
+  return base
+}
+
+export function itemsPaneClass(kind) {
+  if (kind === 'live') return 'flex h-full min-h-0 min-w-0 w-full flex-col gap-2'
+  return 'flex min-h-0 flex-col gap-2'
 }
 
 export function catItemClass(selected = false, kind = 'movies') {
@@ -106,4 +121,15 @@ export function playlistChipClass(selected) {
 
 export function liveBadgeClass() {
   return 'inline-flex w-fit items-center gap-1.5 rounded bg-accent px-2 py-1 font-sans text-[10px] font-bold tracking-[0.06em] text-ink uppercase'
+}
+
+export function favToggleClass(on, overlay = false) {
+  if (overlay) {
+    const base =
+      'absolute right-2 bottom-2 inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border-0 bg-black/60'
+    return on ? `${base} text-accent` : `${base} text-ink`
+  }
+  const base =
+    'inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent'
+  return on ? `${base} text-accent` : `${base} text-mute`
 }

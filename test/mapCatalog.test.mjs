@@ -26,6 +26,7 @@ test('agrupa streams live do faker na categoria correspondente', () => {
   assert.equal(sportsBucket.items[0].id, a.stream_id)
   assert.equal(sportsBucket.items[0].name, a.name)
   assert.equal(sportsBucket.items[0].icon, a.stream_icon)
+  assert.equal(sportsBucket.items[0].epgChannelId, a.epg_channel_id)
   const newsBucket = catalog.categories.find((cat) => cat.id === '3')
   assert.equal(newsBucket.items[0].id, c.stream_id)
 })

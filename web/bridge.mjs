@@ -21,10 +21,16 @@ export function localStore() {
   }
 }
 
-/** fetch do shell quando existe, senão o global. Sempre manda o UA do player_api. */
+function hasUserAgent(init) {
+  const headers = init?.headers
+  if (!headers) return false
+  return Boolean(headers['User-Agent'] || headers['user-agent'])
+}
+
+/** fetch do shell quando existe, senão o global. player_api usa Life TV; HLS pode trazer o UA de player. */
 export function webFetch() {
   const inner = tauriFetch() ?? globalThis.fetch.bind(globalThis)
-  return (url, init) => inner(url, xtreamFetchInit(init))
+  return (url, init) => inner(url, hasUserAgent(init) ? init : xtreamFetchInit(init))
 }
 
 /** Grava a senha no cofre local; false quando não há shell. */

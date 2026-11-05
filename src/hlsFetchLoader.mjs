@@ -1,3 +1,5 @@
+import { hlsFetchInit } from './xtreamUrls.mjs'
+
 function emptyStats() {
   return {
     aborted: false,
@@ -22,6 +24,10 @@ function byteLength(data) {
   return data?.byteLength ?? 0
 }
 
+function nowMs() {
+  return globalThis.performance?.now?.() ?? 0
+}
+
 /** Loader do hls.js que usa o fetch do shell (Rust), sem XHR/CORS do webview. */
 export function createHlsFetchLoader(fetchFn) {
   if (typeof fetchFn !== 'function') {
@@ -37,38 +43,44 @@ export function createHlsFetchLoader(fetchFn) {
 
     load(context, _config, callbacks) {
       this.context = context
-      this.stats = emptyStats()
+      const stats = this.stats
+      stats.aborted = false
+      stats.loaded = 0
+      stats.total = 0
+      stats.loading.first = 0
+      stats.loading.end = 0
       this.abortController = typeof AbortController === 'function' ? new AbortController() : null
-      const started = Date.now()
-      this.stats.loading.start = started
-      const init = this.abortController ? { signal: this.abortController.signal } : {}
+      stats.loading.start = nowMs()
+      const init = hlsFetchInit(this.abortController ? { signal: this.abortController.signal } : {})
       fetchFn(context.url, init)
         .then(async (response) => {
+          if (stats.aborted) return
           if (!response.ok) {
             throw new Error(`hls http ${response.status}`)
           }
-          this.stats.loading.first = Date.now()
+          stats.loading.first = Math.max(nowMs(), stats.loading.start)
           const data = await readBody(response, context.responseType)
-          this.stats.loaded = this.stats.total = byteLength(data)
-          this.stats.loading.end = Date.now()
+          if (stats.aborted) return
+          stats.loaded = stats.total = byteLength(data)
+          stats.loading.end = Math.max(nowMs(), stats.loading.first)
           callbacks.onSuccess(
-            { url: response.url || context.url, data },
-            this.stats,
+            { url: response.url || context.url, data, code: response.status },
+            stats,
             context,
             response,
           )
         })
         .catch((error) => {
-          if (this.abortController?.signal.aborted) {
-            this.stats.aborted = true
-            callbacks.onAbort?.(this.stats, context, null)
+          if (stats.aborted) {
+            callbacks.onAbort?.(stats, context, null)
             return
           }
-          callbacks.onError({ code: 0, text: error.message }, context, null, this.stats)
+          callbacks.onError({ code: 0, text: error.message }, context, null, stats)
         })
     }
 
     abort() {
+      this.stats.aborted = true
       this.abortController?.abort()
     }
 

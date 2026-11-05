@@ -10,7 +10,9 @@ import { DEFAULT_PLAYLIST_NAME, SECRET_PLACEHOLDER, SEED_ACCOUNT } from './confi
 import { byId } from './dom.mjs'
 import { readSecret, readSeed, saveSecret, webFetch } from './bridge.mjs'
 import { clearError, setError, state } from './state.mjs'
-import { playlistStore } from './stores.mjs'
+import { readFreshCatalog, writeCatalogCache } from '../src/catalogCache.mjs'
+import { readFreshGuide, writeGuideCache } from '../src/epgGuideCache.mjs'
+import { catalogsBucket, epgBucket, playlistStore } from './stores.mjs'
 
 /** Cliente Xtream apontado para o portal fake do demo. */
 export function demoClient() {
@@ -92,15 +94,46 @@ export function featureFirst(kind, catalog) {
     .catch(() => {})
 }
 
-/** Carrega o catálogo com rotação de portal. */
+/** Carrega o catálogo com rotação de portal. Live fresco sai do sqlite. */
 export async function fillCatalog() {
   try {
     clearError()
-    const catalog = await withRotation(() => catalogFor(state.shell.catalogKind))
-    featureFirst(state.shell.catalogKind, catalog)
+    const kind = state.shell.catalogKind
+    const cached =
+      kind === 'live' && state.playlistId
+        ? readFreshCatalog(catalogsBucket, { playlistId: state.playlistId, kind })
+        : null
+    if (cached) {
+      featureFirst(kind, cached)
+      state.shell = bindCatalog(state.shell, cached)
+      return
+    }
+    const catalog = await withRotation(() => catalogFor(kind))
+    if (kind === 'live' && state.playlistId) {
+      writeCatalogCache(catalogsBucket, { playlistId: state.playlistId, kind, catalog })
+    }
+    featureFirst(kind, catalog)
     state.shell = bindCatalog(state.shell, catalog)
   } catch (error) {
     setError(error.message)
+  }
+}
+
+/** Carrega o xmltv do dia (cache sqlite) para a listagem ao vivo. */
+export async function fillGuide() {
+  const playlistId = state.playlistId
+  if (!playlistId || typeof state.client?.epg !== 'function') return
+  if (state.guide.key === playlistId) return
+  const cached = readFreshGuide(epgBucket, { playlistId })
+  state.guide = { key: playlistId, programs: cached ?? [] }
+  if (cached) return
+  try {
+    const programs = await withRotation(() => state.client.epg())
+    writeGuideCache(epgBucket, { playlistId, programs })
+    state.guide = { key: playlistId, programs }
+    state.redraw()
+  } catch {
+    state.guide = { key: playlistId, programs: [] }
   }
 }
 
