@@ -5,6 +5,8 @@ import {
   playlistChipClass,
   catalogDetailClass,
   catalogGridClass,
+  itemCardClass,
+  favToggleClass,
   catCountClass,
   catItemClass,
   catListClass,
@@ -106,4 +108,23 @@ test('grade ao vivo é duas colunas: categorias | canais', () => {
   assert.match(cls, /grid-cols-\[18rem/)
   assert.equal(catalogDetailClass('live').includes('hidden'), true)
   assert.equal(catalogGridClass('movies').includes('xl:grid-cols-12'), true)
+})
+
+test('botão de favorito na listagem muda de cinza pra vermelho', () => {
+  assert.match(favToggleClass(false), /text-mute/)
+  assert.equal(favToggleClass(false).includes('text-accent'), false)
+  assert.match(favToggleClass(true), /text-accent/)
+  assert.match(favToggleClass(true, true), /bottom-2/)
+})
+
+test('canais ao vivo em cards usam faixa com largura explícita', () => {
+  const cls = itemListClass('live', 'card')
+  assert.match(cls, /flex-wrap/)
+  assert.match(cls, /w-full/)
+  assert.match(cls, /min-w-0/)
+  assert.match(cls, /flex-1/)
+  assert.equal(cls.includes('flex-col'), false)
+  assert.equal(cls.includes('grid-cols-3'), false)
+  assert.match(itemCardClass(true), /w-\[calc/)
+  assert.match(itemCardClass(true), /ring-accent/)
 })

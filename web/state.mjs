@@ -1,3 +1,4 @@
+import { CHANNEL_CARD_PAGE } from '../src/channelLayout.mjs'
 import { createTvShell } from '../src/tvShell.mjs'
 
 /** Estado único da tela; views leem, sessão e wiring escrevem. */
@@ -9,6 +10,8 @@ export const state = {
   featured: null,
   playlistId: '',
   epg: { key: '', listings: [] },
+  channelLayout: 'list',
+  itemLimit: CHANNEL_CARD_PAGE,
   redraw: () => {},
 }
 

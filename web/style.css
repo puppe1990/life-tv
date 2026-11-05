@@ -221,17 +221,29 @@
   .top-1\/2 {
     top: calc(1 / 2 * 100%);
   }
+  .top-2 {
+    top: calc(var(--spacing) * 2);
+  }
   .top-3 {
     top: calc(var(--spacing) * 3);
   }
   .top-4 {
     top: calc(var(--spacing) * 4);
   }
+  .right-2 {
+    right: calc(var(--spacing) * 2);
+  }
   .right-4 {
     right: calc(var(--spacing) * 4);
   }
+  .bottom-2 {
+    bottom: calc(var(--spacing) * 2);
+  }
   .bottom-4 {
     bottom: calc(var(--spacing) * 4);
+  }
+  .left-2 {
+    left: calc(var(--spacing) * 2);
   }
   .left-3 {
     left: calc(var(--spacing) * 3);
@@ -311,6 +323,9 @@
   .inline-flex {
     display: inline-flex;
   }
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
   .aspect-video {
     aspect-ratio: var(--aspect-video);
   }
@@ -341,6 +356,9 @@
   .min-h-0 {
     min-height: 0px;
   }
+  .min-h-28 {
+    min-height: calc(var(--spacing) * 28);
+  }
   .min-h-\[1\.4em\] {
     min-height: 1.4em;
   }
@@ -370,6 +388,9 @@
   }
   .w-\[240px\] {
     width: 240px;
+  }
+  .w-\[calc\(\(100\%-1\.5rem\)\/3\)\] {
+    width: calc((100% - 1.5rem) / 3);
   }
   .w-\[min\(28vw\,360px\)\] {
     width: min(28vw, 360px);
@@ -420,6 +441,9 @@
   .grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .grid-cols-\[18rem_minmax\(0\,1fr\)\] {
     grid-template-columns: 18rem minmax(0,1fr);
   }
@@ -431,6 +455,9 @@
   }
   .flex-wrap {
     flex-wrap: wrap;
+  }
+  .content-start {
+    align-content: flex-start;
   }
   .items-center {
     align-items: center;
@@ -727,6 +754,9 @@
   .text-\[10px\] {
     font-size: 10px;
   }
+  .text-\[11px\] {
+    font-size: 11px;
+  }
   .text-\[12px\] {
     font-size: 12px;
   }
@@ -744,6 +774,9 @@
   }
   .text-\[18px\] {
     font-size: 18px;
+  }
+  .text-\[28px\] {
+    font-size: 28px;
   }
   .text-\[40px\] {
     font-size: 40px;
@@ -977,6 +1010,9 @@
     }
     .xl\:col-span-7 {
       grid-column: span 7 / span 7;
+    }
+    .xl\:w-\[calc\(\(100\%-2\.25rem\)\/4\)\] {
+      width: calc((100% - 2.25rem) / 4);
     }
     .xl\:grid-cols-12 {
       grid-template-columns: repeat(12, minmax(0, 1fr));
