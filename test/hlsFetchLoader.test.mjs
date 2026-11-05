@@ -86,3 +86,77 @@ test('erro http 403 não inclui senha da URL', async () => {
     },
   )
 })
+
+function okFetch(body = '#EXTM3U\n#EXTINF:10,\nseg.ts\n') {
+  return async () => ({
+    ok: true,
+    status: 200,
+    url: `http://${faker.internet.domainName()}/index.m3u8`,
+    text: async () => body,
+    arrayBuffer: async () => new TextEncoder().encode(body).buffer,
+  })
+}
+
+test('onSuccess inclui code HTTP e reusa o stats do construtor', async () => {
+  const url = `http://${faker.internet.domainName()}/index.m3u8`
+  const loader = new (createHlsFetchLoader(okFetch()))({})
+  const statsBefore = loader.stats
+  const seen = await new Promise((resolve, reject) => {
+    loader.load(
+      { url, responseType: 'text' },
+      {},
+      {
+        onSuccess: (response, stats) => resolve({ response, stats }),
+        onError: (error) => reject(new Error(error.text)),
+      },
+    )
+  })
+  assert.equal(seen.response.code, 200)
+  assert.equal(seen.stats, statsBefore)
+  assert.equal(loader.stats, statsBefore)
+})
+
+test('loading.start usa a escala de performance.now', async () => {
+  const url = `http://${faker.internet.domainName()}/index.m3u8`
+  const loader = new (createHlsFetchLoader(okFetch()))({})
+  await loadOnce(loader, { url, responseType: 'text' })
+  const start = loader.stats.loading.start
+  assert.equal(typeof start, 'number')
+  assert.ok(start > 0, `start ${start} deveria ser > 0`)
+  assert.ok(start < 1e10, `start ${start} deveria ser performance.now(), não Date.now()`)
+  assert.ok(loader.stats.loading.end >= loader.stats.loading.first)
+})
+
+test('abort marca stats e não chama onSuccess', async () => {
+  const url = `http://${faker.internet.domainName()}/index.m3u8`
+  let finish
+  const fetchFn = () =>
+    new Promise((resolve) => {
+      finish = resolve
+    })
+  const loader = new (createHlsFetchLoader(fetchFn))({})
+  const hits = { success: 0, abort: 0 }
+  loader.load(
+    { url, responseType: 'text' },
+    {},
+    {
+      onSuccess: () => {
+        hits.success += 1
+      },
+      onError: () => {},
+      onAbort: () => {
+        hits.abort += 1
+      },
+    },
+  )
+  loader.abort()
+  finish({
+    ok: true,
+    status: 200,
+    text: async () => '#EXTM3U\n',
+    arrayBuffer: async () => new ArrayBuffer(0),
+  })
+  await new Promise((resolve) => setTimeout(resolve, 20))
+  assert.equal(hits.success, 0)
+  assert.equal(loader.stats.aborted, true)
+})
