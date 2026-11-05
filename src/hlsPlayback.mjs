@@ -12,17 +12,34 @@ function playNative(video, url) {
   }
 }
 
+function playWhenReady(video) {
+  const playing = video.play?.()
+  if (playing && typeof playing.catch === 'function') {
+    playing.catch((error) => {
+      if (error?.name === 'AbortError' || error?.name === 'NotAllowedError') return
+    })
+  }
+}
+
+function wireHlsEvents(hls, Hls, video, onFatalError) {
+  if (typeof hls.on !== 'function' || !Hls.Events) return
+  if (Hls.Events.ERROR) {
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (data?.fatal) onFatalError?.(data)
+    })
+  }
+  if (Hls.Events.MANIFEST_PARSED) {
+    hls.on(Hls.Events.MANIFEST_PARSED, () => playWhenReady(video))
+  }
+}
+
 function playHlsJs(video, url, Hls, fetchFn, onFatalError) {
   const hls = new Hls({
     enableWorker: false,
     lowLatencyMode: false,
     loader: createHlsFetchLoader(fetchFn),
   })
-  if (typeof hls.on === 'function' && Hls.Events?.ERROR) {
-    hls.on(Hls.Events.ERROR, (_event, data) => {
-      if (data?.fatal) onFatalError?.(data)
-    })
-  }
+  wireHlsEvents(hls, Hls, video, onFatalError)
   hls.loadSource(url)
   hls.attachMedia(video)
   return {

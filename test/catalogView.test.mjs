@@ -22,11 +22,14 @@ const { state } = await import('../web/state.mjs')
 const { renderCatalog, renderHome, renderTabs, selectCategory, selectItem } =
   await import('../web/catalogView.mjs')
 const { createTvShell } = await import('../src/tvShell.mjs')
+const { favStore, historyStore } = await import('../web/stores.mjs')
 
 beforeEach(() => {
   faker.seed(57)
   dom.window.document.getElementById('search').value = ''
   state.shell = createTvShell()
+  historyStore.clear()
+  favStore.clear()
 })
 
 function moviesCatalog() {
@@ -135,6 +138,65 @@ test('home mostra o destaque quando há item escolhido', () => {
   assert.match(hero.textContent, /Ao vivo/)
   assert.equal(document.querySelectorAll('#home [data-tile]').length, 4)
   state.featured = null
+})
+
+test('home esconde Continuar assistindo e Favoritos quando estão vazios', () => {
+  renderHome()
+  const text = document.querySelector('#home').textContent
+  assert.equal(text.includes('Continuar assistindo'), false)
+  assert.equal(text.includes('Favoritos'), false)
+})
+
+test('home mostra Continuar assistindo e abre o player no clique', () => {
+  historyStore.remember({
+    streamId: String(faker.number.int({ min: 1000, max: 9999 })),
+    name: 'ESPN 1 HD',
+    catalogKind: 'live',
+  })
+  renderHome()
+  const home = document.querySelector('#home')
+  assert.match(home.textContent, /Continuar assistindo/)
+  assert.match(home.textContent, /ESPN 1 HD/)
+  document.querySelector('[data-home-card="history"]').click()
+  assert.equal(state.shell.screen, 'player')
+  assert.equal(state.shell.catalogKind, 'live')
+  assert.equal(state.shell.selectedItem.name, 'ESPN 1 HD')
+})
+
+test('home mostra Favoritos e abre o player no clique', () => {
+  const streamId = String(faker.number.int({ min: 1000, max: 9999 }))
+  favStore.toggleFav(streamId, {
+    streamId,
+    name: 'Band Sports',
+    catalogKind: 'live',
+  })
+  renderHome()
+  const home = document.querySelector('#home')
+  assert.match(home.textContent, /Favoritos/)
+  assert.match(home.textContent, /Band Sports/)
+  document.querySelector('[data-home-card="fav"]').click()
+  assert.equal(state.shell.screen, 'player')
+  assert.equal(state.shell.selectedItem.name, 'Band Sports')
+})
+
+test('Favoritar no detalhe aparece na home', () => {
+  const { categories, first } = moviesCatalog()
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'movies',
+    catalog: { kind: 'movies', categories },
+    selectedItem: first,
+  }
+  renderCatalog()
+  const favButton = [...document.querySelectorAll('#detail button')].find((button) =>
+    button.textContent.includes('Favoritar'),
+  )
+  favButton.click()
+  state.shell = { ...state.shell, screen: 'home' }
+  renderHome()
+  assert.match(document.querySelector('#home').textContent, /Favoritos/)
+  assert.match(document.querySelector('#home').textContent, /Alfa/)
 })
 
 test('catálogo ao vivo mostra marca e selo no detalhe', () => {

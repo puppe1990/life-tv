@@ -1,6 +1,8 @@
 import { minutesBetween } from '../src/epgWindow.mjs'
+import { fullscreenButtonLabel } from '../src/fullscreen.mjs'
 import { attachHlsPlayback } from '../src/hlsPlayback.mjs'
 import { resolvePlayerSource } from '../src/playerSource.mjs'
+import { watchCardFromItem } from '../src/watchCard.mjs'
 import { redactUrl } from '../src/xtreamUrls.mjs'
 import {
   ghostClass,
@@ -12,9 +14,16 @@ import {
 import { epgClock, epgProgress } from '../src/epgProgress.mjs'
 import { tauriInvoke, webFetch } from './bridge.mjs'
 import { byId, el } from './dom.mjs'
+import {
+  exitPlayerFullscreen,
+  isPlayerFullscreen,
+  resetPlayerFullscreen,
+  togglePlayerFullscreen,
+} from './fullscreen.mjs'
+import { ICON_HEART, iconSvg } from './icons.mjs'
 import { playUrl, withRotation } from './session.mjs'
 import { state } from './state.mjs'
-import { resumeStore } from './stores.mjs'
+import { favStore, historyStore, resumeStore } from './stores.mjs'
 
 let hlsEngine = null
 let held = { url: '', video: null, session: null, frame: null, item: null }
@@ -28,10 +37,49 @@ export function setHlsEngine(Hls) {
 export function resetPlayerMedia() {
   held.session?.destroy?.()
   held = { url: '', video: null, session: null, frame: null, item: null }
+  resetPlayerFullscreen()
 }
 
 function streamIdOf(item) {
   return item ? String(item.id) : ''
+}
+
+function rememberWatch(item) {
+  const kind = state.shell.catalogKind
+  if (!item?.id || !kind) return
+  historyStore.remember(watchCardFromItem(item, kind))
+}
+
+function favLabel(on) {
+  return on ? 'Remover favorito' : 'Favoritar'
+}
+
+function syncFavButtons() {
+  const item = state.shell.selectedItem
+  const on = item ? favStore.isFav(item.id) : false
+  for (const button of document.querySelectorAll('[data-fav]')) {
+    button.setAttribute('aria-pressed', String(on))
+    const text = [...button.childNodes].find((node) => node.nodeType === 3)
+    if (text) text.textContent = ` ${favLabel(on)}`
+  }
+}
+
+function favButton(extraClass = '') {
+  const item = state.shell.selectedItem
+  const on = item ? favStore.isFav(item.id) : false
+  const className = extraClass ? `${ghostClass()} ${extraClass}` : ghostClass()
+  const button = el('button', className)
+  button.type = 'button'
+  button.dataset.fav = '1'
+  button.setAttribute('aria-pressed', String(on))
+  button.append(iconSvg(ICON_HEART, 16), document.createTextNode(` ${favLabel(on)}`))
+  button.addEventListener('click', () => {
+    const current = state.shell.selectedItem
+    if (!current) return
+    favStore.toggleFav(current.id, watchCardFromItem(current, state.shell.catalogKind))
+    syncFavButtons()
+  })
+  return button
 }
 
 function seekResume(video, item) {
@@ -62,7 +110,7 @@ function wireVideo(video) {
 
 function startVideo(video, url) {
   video.play().catch((error) => {
-    if (error?.name === 'NotAllowedError') return
+    if (error?.name === 'NotAllowedError' || error?.name === 'AbortError') return
     state.errorText = `player recusou: ${error.message}`
     const box = byId('error')
     if (box) box.textContent = state.errorText
@@ -97,7 +145,9 @@ function bindHlsOrProgressive(video, url, source) {
 }
 
 function playerVideo(url, item) {
+  const changed = streamIdOf(item) !== streamIdOf(held.item)
   held.item = item
+  if (changed) rememberWatch(item)
   if (held.video && held.frame) {
     const nameEl = held.frame.querySelector('[data-player-name]')
     if (nameEl) nameEl.textContent = item?.name ?? ''
@@ -107,7 +157,7 @@ function playerVideo(url, item) {
     }
     return { video: held.video, source, frame: held.frame }
   }
-  const video = el('video', 'h-full w-full bg-black object-contain')
+  const video = el('video', 'min-h-0 min-w-0 w-full flex-1 bg-black object-contain')
   video.id = 'player-video'
   video.controls = true
   video.playsInline = true
@@ -125,12 +175,8 @@ function playerVideo(url, item) {
 }
 
 function playerFrame(video, item) {
-  const frame = el('div', 'relative aspect-video overflow-hidden rounded-lg bg-black')
-  frame.append(video)
-  const top = el(
-    'div',
-    'pointer-events-none absolute top-0 right-0 left-0 flex items-center gap-2 bg-linear-to-b from-black/70 to-transparent p-4',
-  )
+  const frame = el('div', 'relative flex aspect-video flex-col overflow-hidden rounded-lg bg-black')
+  const top = el('div', 'flex shrink-0 items-center gap-2 bg-black/80 px-4 py-3')
   if (state.shell.catalogKind === 'live') {
     top.append(el('span', liveBadgeClass(), 'Ao vivo'))
   }
@@ -141,7 +187,9 @@ function playerFrame(video, item) {
   )
   name.dataset.playerName = '1'
   top.append(name)
-  frame.append(top)
+  top.append(favButton())
+  top.append(fullscreenButton('ml-auto'))
+  frame.append(top, video)
   return frame
 }
 
@@ -260,6 +308,19 @@ function sidecarButton(url) {
   return button
 }
 
+function fullscreenButton(extraClass = '') {
+  const className = extraClass ? `${ghostClass()} ${extraClass}` : ghostClass()
+  const button = el('button', className)
+  button.type = 'button'
+  button.dataset.fullscreen = '1'
+  button.setAttribute('aria-pressed', String(isPlayerFullscreen()))
+  button.textContent = fullscreenButtonLabel(isPlayerFullscreen())
+  button.addEventListener('click', () => {
+    void togglePlayerFullscreen()
+  })
+  return button
+}
+
 /** Desenha a tela do player com vídeo, nota e URL. */
 export function renderPlayer() {
   const root = byId('player')
@@ -267,6 +328,7 @@ export function renderPlayer() {
   root.hidden = !visible
   if (!visible) {
     held.video?.pause()
+    void exitPlayerFullscreen()
     return
   }
   const item = state.shell.selectedItem
@@ -279,6 +341,7 @@ export function renderPlayer() {
   if (url) {
     const media = playerVideo(url, item)
     if (media.source.kind === 'hls' || media.source.kind === 'progressive') frame = media.frame
+    after.push(favButton(), fullscreenButton())
     if (media.source.kind === 'sidecar' || tauriInvoke()) after.push(sidecarButton(url))
     note.textContent = playerNote(media.source)
   } else if (state.shell.catalogKind === 'series') {
@@ -294,4 +357,5 @@ export function renderPlayer() {
   after.push(note, el('code', playerUrlClass(), redactUrl(url)))
   if (frame) putPlayerChrome(root, before, frame, after)
   else root.replaceChildren(...before, ...after)
+  syncFavButtons()
 }

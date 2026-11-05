@@ -224,12 +224,6 @@
   .top-4 {
     top: calc(var(--spacing) * 4);
   }
-  .right-0 {
-    right: 0px;
-  }
-  .left-0 {
-    left: 0px;
-  }
   .left-3 {
     left: calc(var(--spacing) * 3);
   }
@@ -358,6 +352,9 @@
   }
   .w-\[18px\] {
     width: 18px;
+  }
+  .w-\[240px\] {
+    width: 240px;
   }
   .w-fit {
     width: fit-content;
@@ -497,6 +494,12 @@
       background-color: color-mix(in oklab, var(--color-black) 60%, transparent);
     }
   }
+  .bg-black\/80 {
+    background-color: color-mix(in srgb, #000 80%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in oklab, var(--color-black) 80%, transparent);
+    }
+  }
   .bg-good {
     background-color: var(--color-good);
   }
@@ -521,13 +524,6 @@
   .bg-well {
     background-color: var(--color-well);
   }
-  .bg-linear-to-b {
-    --tw-gradient-position: to bottom;
-    @supports (background-image: linear-gradient(in lab, red, red)) {
-      --tw-gradient-position: to bottom in oklab;
-    }
-    background-image: linear-gradient(var(--tw-gradient-stops));
-  }
   .bg-linear-to-br {
     --tw-gradient-position: to bottom right;
     @supports (background-image: linear-gradient(in lab, red, red)) {
@@ -546,13 +542,6 @@
     --tw-gradient-from: color-mix(in srgb, #e50914 25%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
       --tw-gradient-from: color-mix(in oklab, var(--color-accent) 25%, transparent);
-    }
-    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
-  }
-  .from-black\/70 {
-    --tw-gradient-from: color-mix(in srgb, #000 70%, transparent);
-    @supports (color: color-mix(in lab, red, red)) {
-      --tw-gradient-from: color-mix(in oklab, var(--color-black) 70%, transparent);
     }
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
   }
@@ -604,10 +593,6 @@
     @supports (color: color-mix(in lab, red, red)) {
       --tw-gradient-to: color-mix(in oklab, var(--color-black) 50%, transparent);
     }
-    --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
-  }
-  .to-transparent {
-    --tw-gradient-to: transparent;
     --tw-gradient-stops: var(--tw-gradient-via-stops, var(--tw-gradient-position), var(--tw-gradient-from) var(--tw-gradient-from-position), var(--tw-gradient-to) var(--tw-gradient-to-position));
   }
   .to-void {
@@ -671,6 +656,9 @@
   .pr-4 {
     padding-right: calc(var(--spacing) * 4);
   }
+  .pb-1 {
+    padding-bottom: var(--spacing);
+  }
   .pb-12 {
     padding-bottom: calc(var(--spacing) * 12);
   }
@@ -726,6 +714,9 @@
   }
   .text-\[18px\] {
     font-size: 18px;
+  }
+  .text-\[40px\] {
+    font-size: 40px;
   }
   .text-\[72px\] {
     font-size: 72px;
@@ -901,6 +892,9 @@
     .md\:w-9 {
       width: calc(var(--spacing) * 9);
     }
+    .md\:w-\[280px\] {
+      width: 280px;
+    }
     .md\:max-w-\[280px\] {
       max-width: 280px;
     }
@@ -1010,6 +1004,38 @@
   }
   [hidden] {
     display: none !important;
+  }
+  body.is-fullscreen header, body.is-fullscreen #home, body.is-fullscreen #catalog, body.is-fullscreen #settings, body.is-fullscreen #error {
+    display: none !important;
+  }
+  body.is-fullscreen main {
+    padding: 0;
+  }
+  body.is-fullscreen #player {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    padding: 0;
+  }
+  body.is-fullscreen #player > :not(#player-frame) {
+    display: none;
+  }
+  body.is-fullscreen #player-frame {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    min-width: 0;
+    flex-direction: column;
+    aspect-ratio: auto;
+    border-radius: 0;
+  }
+  body.is-fullscreen #player-video {
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    height: auto;
   }
   ::-webkit-scrollbar {
     width: 8px;
