@@ -1,4 +1,4 @@
-# Life TV — regras pra agentes
+# OpenFlix — regras pra agentes
 
 Núcleo de catálogo/player para playlists **próprias** Xtream/M3U. Spec veio do APK LIFE TV (white-label FlexTV). Sem VPN, MAC cloud, Unsafe TLS ou dump de segredo.
 
@@ -14,7 +14,7 @@ npm run ci
 npm run dev         # css + http://127.0.0.1:8792/web/  (não use 8765)
 npm run tauri:dist  # web/ + src/ → .tauri-dist (frontendDist do Tauri)
 npm run tauri:dev   # janela Tauri 2 1920x1080
-npm run tauri:app   # target-app/Life TV.app
+npm run tauri:app   # target-app/OpenFlix.app
 ```
 
 Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.
@@ -35,7 +35,7 @@ Pre-commit: lint-staged + `npm test`. CI GitHub Actions = `npm run ci`.
 - `app.js` — wiring: atalhos, abas, boot (não desenha nada).
 - `session.mjs` — boot/seed/rotação de portal, catálogo e playlist.
 - `catalogView.mjs` — home, abas e catálogo em 3 colunas.
-- `playerView.mjs` — vídeo, resume, EPG, catch-up e player externo.
+- `playerView.mjs` — vídeo, resume, EPG, catch-up, PiP e player externo.
 - `render.mjs` — `renderAll()` a partir de `state`.
 - `state.mjs` / `stores.mjs` / `bridge.mjs` / `dom.mjs` — estado, stores, Tauri/storage, helpers DOM.
 - Núcleo puro e testado em `src/`; views não têm teste, então valide rodando o app.

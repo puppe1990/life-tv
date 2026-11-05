@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Life TV",
+  "productName": "OpenFlix",
   "version": "0.1.0",
   "identifier": "com.life-tv.app",
   "build": {
@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Life TV",
+        "title": "OpenFlix",
         "width": 1920,
         "height": 1080,
         "minWidth": 960,

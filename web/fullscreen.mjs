@@ -51,14 +51,14 @@ async function setShellFullscreen(on) {
 /** Liga ou desliga teatro + janela. */
 export async function setPlayerFullscreen(on) {
   const next = on === true
+  active = next
+  applyTheater(active)
+  syncButtons()
   try {
     await setShellFullscreen(next)
   } catch {
     /* o CSS do teatro preenche o webview mesmo se a janela recusar */
   }
-  active = next
-  applyTheater(active)
-  syncButtons()
 }
 
 /** Alterna a tela cheia do player. */

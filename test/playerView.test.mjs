@@ -6,9 +6,11 @@ import { createTvShell } from '../src/tvShell.mjs'
 
 const HLS_TYPE = 'application/vnd.apple.mpegurl'
 const plays = []
+const pauses = []
 
 const dom = new JSDOM(`<!doctype html><body>
   <section id="player" hidden></section>
+  <aside id="pip" hidden></aside>
 </body>`)
 
 globalThis.document = dom.window.document
@@ -16,18 +18,36 @@ globalThis.window = dom.window
 dom.window.HTMLVideoElement.prototype.canPlayType = function canPlayType(type) {
   return type === HLS_TYPE ? 'maybe' : ''
 }
-dom.window.HTMLVideoElement.prototype.play = function play() {
-  plays.push(this.getAttribute('src') || this.src)
-  return Promise.resolve()
+Object.defineProperty(dom.window.HTMLVideoElement.prototype, 'paused', {
+  configurable: true,
+  get() {
+    return this._paused !== false
+  },
+})
+function stubVideo() {
+  dom.window.HTMLVideoElement.prototype.play = function play() {
+    this._paused = false
+    plays.push(this.getAttribute('src') || this.src)
+    return Promise.resolve()
+  }
+  dom.window.HTMLVideoElement.prototype.pause = function pause() {
+    this._paused = true
+    pauses.push(this)
+  }
 }
+stubVideo()
 
 const { state } = await import('../web/state.mjs')
 const { renderPlayer, resetPlayerMedia, setHlsEngine } = await import('../web/playerView.mjs')
+const { togglePlayerFullscreen } = await import('../web/fullscreen.mjs')
 const { favStore, historyStore } = await import('../web/stores.mjs')
 
 beforeEach(() => {
   faker.seed(61)
   plays.length = 0
+  pauses.length = 0
+  stubVideo()
+  state.redraw = () => {}
   state.shell = createTvShell()
   state.client = null
   state.errorText = ''
@@ -100,34 +120,39 @@ test('AbortError do play não mostra player recusou', async () => {
   assert.equal(state.errorText, '')
 })
 
-test('player mostra botão Tela cheia', () => {
+test('player não mostra botão Tela cheia', () => {
   openFla()
   renderPlayer()
-  const button = document.querySelector('[data-fullscreen]')
+  assert.equal(document.querySelector('[data-fullscreen]'), null)
+})
+
+test('player não duplica Favoritar nem Abrir no player abaixo do vídeo', () => {
+  globalThis.__TAURI__ = { core: { invoke: async () => {} } }
+  openFla()
+  renderPlayer()
+  assert.equal(document.querySelectorAll('#player > [data-fav]').length, 0)
+  assert.equal(document.querySelectorAll('#player > [data-sidecar]').length, 0)
+  assert.equal(document.querySelectorAll('#player > button').length, 0)
+})
+
+test('no Tauri o quadro tem Abrir no player no topo', () => {
+  globalThis.__TAURI__ = { core: { invoke: async () => {} } }
+  openFla()
+  renderPlayer()
+  const button = document.querySelector('#player-frame [data-sidecar]')
   assert.ok(button)
-  assert.match(button.textContent, /Tela cheia/)
+  assert.match(button.textContent, /Abrir no player/)
+  assert.equal(button.className.includes('ml-auto'), true)
 })
 
-test('quadro do player tem o botão Tela cheia por cima do vídeo', () => {
+test('F liga o teatro pela API de tela cheia', async () => {
   openFla()
   renderPlayer()
-  const overlay = document.querySelector('#player-frame [data-fullscreen]')
-  assert.ok(overlay)
-  assert.match(overlay.textContent, /Tela cheia/)
-  assert.equal(overlay.parentElement.className.includes('absolute'), false)
-})
-
-test('clicar em Tela cheia liga o teatro e troca o rótulo', async () => {
-  openFla()
-  renderPlayer()
-  const button = document.querySelector('[data-fullscreen]')
-  button.click()
-  await Promise.resolve()
+  await togglePlayerFullscreen()
   assert.equal(document.body.classList.contains('is-fullscreen'), true)
-  assert.match(button.textContent, /Sair da tela cheia/)
 })
 
-test('clicar em Tela cheia pede setFullscreen na janela Tauri', async () => {
+test('teatro pede setFullscreen na janela Tauri', async () => {
   const calls = []
   let resume
   const done = new Promise((resolve) => {
@@ -147,7 +172,7 @@ test('clicar em Tela cheia pede setFullscreen na janela Tauri', async () => {
   }
   openFla()
   renderPlayer()
-  document.querySelector('[data-fullscreen]').click()
+  void togglePlayerFullscreen()
   await done
   await Promise.resolve()
   assert.deepEqual(calls, [true])
@@ -215,4 +240,119 @@ test('no Tauri o HLS vai pelo hls.js e não coloca o http no src', () => {
   assert.equal(loads[0], url)
   assert.equal(video.getAttribute('src'), null)
   assert.match(document.querySelector('#player').textContent, /fetch do shell/)
+})
+
+function leavePlayer(screen = 'home') {
+  state.shell = { ...state.shell, screen }
+  renderPlayer()
+}
+
+test('sair do player tocando coloca o vídeo no PiP sem pausar', () => {
+  const url = openFla()
+  renderPlayer()
+  const video = document.querySelector('#player video')
+  leavePlayer()
+  assert.equal(pauses.length, 0)
+  assert.equal(document.querySelector('#pip video'), video)
+  assert.equal(document.getElementById('pip').hidden, false)
+  assert.equal(document.getElementById('player').hidden, true)
+  assert.equal(video.paused, false)
+  assert.equal(plays[0], url)
+})
+
+test('PiP tira o vídeo do #player antes de esconder a seção', () => {
+  openFla()
+  renderPlayer()
+  const player = document.getElementById('player')
+  const video = player.querySelector('video')
+  Object.defineProperty(player, 'hidden', {
+    configurable: true,
+    get() {
+      return player.hasAttribute('hidden')
+    },
+    set(value) {
+      if (value && player.contains(video)) video.pause()
+      if (value) player.setAttribute('hidden', '')
+      else player.removeAttribute('hidden')
+    },
+  })
+  try {
+    leavePlayer()
+    assert.equal(pauses.length, 0)
+    assert.equal(document.querySelector('#pip video'), video)
+    assert.equal(video.paused, false)
+  } finally {
+    delete player.hidden
+  }
+})
+
+test('sair do player pausado não abre o PiP', () => {
+  openFla()
+  renderPlayer()
+  const video = document.querySelector('#player video')
+  video.pause()
+  pauses.length = 0
+  leavePlayer()
+  assert.equal(document.getElementById('pip').hidden, true)
+  assert.equal(document.querySelector('#pip video'), null)
+  assert.equal(pauses.length, 1)
+})
+
+test('clicar no PiP volta ao player com o mesmo vídeo', () => {
+  openFla()
+  renderPlayer()
+  const video = document.querySelector('#player video')
+  state.redraw = renderPlayer
+  leavePlayer()
+  document.getElementById('pip').click()
+  assert.equal(state.shell.screen, 'player')
+  assert.equal(state.shell.selectedItem.id, 1658633)
+  assert.equal(document.querySelector('#player video'), video)
+  assert.equal(document.getElementById('pip').hidden, true)
+  assert.equal(document.getElementById('player').hidden, false)
+})
+
+test('clicar no PiP depois da home zerada restaura o item que estava tocando', () => {
+  openFla()
+  renderPlayer()
+  const video = document.querySelector('#player video')
+  state.redraw = renderPlayer
+  state.shell = createTvShell()
+  renderPlayer()
+  document.getElementById('pip').click()
+  assert.equal(state.shell.screen, 'player')
+  assert.equal(state.shell.catalogKind, 'live')
+  assert.equal(state.shell.selectedItem.id, 1658633)
+  assert.equal(document.querySelector('#player video'), video)
+})
+
+test('dar play em outro item fecha o PiP e troca o stream', () => {
+  openFla()
+  renderPlayer()
+  const video = document.querySelector('#player video')
+  leavePlayer()
+  assert.equal(document.getElementById('pip').hidden, false)
+  assert.equal(document.querySelector('#pip video'), video)
+  const otherUrl = `http://${faker.internet.domainName()}/live/user/pass/42.m3u8`
+  state.client = { livePlayUrl: () => otherUrl, shortEpg: async () => [] }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'player',
+    catalogKind: 'live',
+    selectedItem: { id: 42, name: faker.lorem.words(2) },
+  }
+  renderPlayer()
+  assert.equal(document.getElementById('pip').hidden, true)
+  assert.equal(document.querySelector('#player video'), video)
+  assert.equal(plays.at(-1), otherUrl)
+})
+
+test('sair em tela cheia tocando sai do teatro e deixa o PiP', async () => {
+  openFla()
+  renderPlayer()
+  await togglePlayerFullscreen()
+  leavePlayer()
+  assert.equal(document.body.classList.contains('is-fullscreen'), false)
+  assert.equal(document.getElementById('pip').hidden, false)
+  assert.ok(document.querySelector('#pip video'))
 })

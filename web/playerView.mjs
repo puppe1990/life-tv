@@ -1,6 +1,10 @@
 import { minutesBetween } from '../src/epgWindow.mjs'
-import { fullscreenButtonLabel } from '../src/fullscreen.mjs'
 import { attachHlsPlayback } from '../src/hlsPlayback.mjs'
+import {
+  isPlayingVideo,
+  restorePlayerFromPip,
+  shouldPictureInPicture,
+} from '../src/pictureInPicture.mjs'
 import { resolvePlayerSource } from '../src/playerSource.mjs'
 import { watchCardFromItem } from '../src/watchCard.mjs'
 import { redactUrl } from '../src/xtreamUrls.mjs'
@@ -14,30 +18,76 @@ import {
 import { epgClock, epgProgress } from '../src/epgProgress.mjs'
 import { tauriInvoke, webFetch } from './bridge.mjs'
 import { byId, el } from './dom.mjs'
-import {
-  exitPlayerFullscreen,
-  isPlayerFullscreen,
-  resetPlayerFullscreen,
-  togglePlayerFullscreen,
-} from './fullscreen.mjs'
+import { exitPlayerFullscreen, resetPlayerFullscreen } from './fullscreen.mjs'
 import { ICON_HEART, iconSvg } from './icons.mjs'
 import { playUrl, withRotation } from './session.mjs'
 import { state } from './state.mjs'
 import { favStore, historyStore, resumeStore } from './stores.mjs'
 
 let hlsEngine = null
-let held = { url: '', video: null, session: null, frame: null, item: null }
+let held = { url: '', video: null, session: null, frame: null, item: null, catalogKind: null }
+let pipWired = false
 
 /** Injeta o engine hls.js (webview Tauri). */
 export function setHlsEngine(Hls) {
   hlsEngine = Hls
 }
 
+function emptyHeld() {
+  return { url: '', video: null, session: null, frame: null, item: null, catalogKind: null }
+}
+
 /** Solta o <video> preso entre renders. Só testes. */
 export function resetPlayerMedia() {
   held.session?.destroy?.()
-  held = { url: '', video: null, session: null, frame: null, item: null }
+  hidePip()
+  held = emptyHeld()
   resetPlayerFullscreen()
+}
+
+function playingNow() {
+  return Boolean(held.session) && isPlayingVideo(held.video)
+}
+
+function hidePip() {
+  const host = byId('pip')
+  if (!host) return
+  host.hidden = true
+  if (held.frame && held.frame.parentNode === host) host.replaceChildren()
+  if (held.video) held.video.controls = true
+}
+
+function restoreFromPip() {
+  if (!held.item || !held.catalogKind) return
+  state.shell = restorePlayerFromPip(state.shell, {
+    catalogKind: held.catalogKind,
+    selectedItem: held.item,
+  })
+  state.redraw()
+}
+
+function wirePip(host) {
+  if (pipWired) return
+  pipWired = true
+  host.addEventListener('click', restoreFromPip)
+  host.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    restoreFromPip()
+  })
+}
+
+function dockPip() {
+  const host = byId('pip')
+  if (!host || !held.frame) return
+  if (held.video) held.video.controls = false
+  if (held.frame.parentNode !== host) host.replaceChildren(held.frame)
+  host.hidden = false
+  host.setAttribute('role', 'button')
+  host.setAttribute('aria-label', 'Voltar ao player')
+  host.tabIndex = 0
+  wirePip(host)
+  if (held.video && held.url) startVideo(held.video, held.url)
 }
 
 function streamIdOf(item) {
@@ -147,6 +197,7 @@ function bindHlsOrProgressive(video, url, source) {
 function playerVideo(url, item) {
   const changed = streamIdOf(item) !== streamIdOf(held.item)
   held.item = item
+  held.catalogKind = state.shell.catalogKind
   if (changed) rememberWatch(item)
   if (held.video && held.frame) {
     const nameEl = held.frame.querySelector('[data-player-name]')
@@ -177,6 +228,7 @@ function playerVideo(url, item) {
 function playerFrame(video, item) {
   const frame = el('div', 'relative flex aspect-video flex-col overflow-hidden rounded-lg bg-black')
   const top = el('div', 'flex shrink-0 items-center gap-2 bg-black/80 px-4 py-3')
+  top.dataset.playerToolbar = '1'
   if (state.shell.catalogKind === 'live') {
     top.append(el('span', liveBadgeClass(), 'Ao vivo'))
   }
@@ -188,7 +240,7 @@ function playerFrame(video, item) {
   name.dataset.playerName = '1'
   top.append(name)
   top.append(favButton())
-  top.append(fullscreenButton('ml-auto'))
+  if (tauriInvoke()) top.append(sidecarButton('ml-auto'))
   frame.append(top, video)
   return frame
 }
@@ -301,36 +353,40 @@ function openSidecar(url) {
   })
 }
 
-function sidecarButton(url) {
-  const button = el('button', ghostClass(), 'Abrir no player')
-  button.type = 'button'
-  button.addEventListener('click', () => openSidecar(url))
-  return button
-}
-
-function fullscreenButton(extraClass = '') {
+function sidecarButton(extraClass = '') {
   const className = extraClass ? `${ghostClass()} ${extraClass}` : ghostClass()
   const button = el('button', className)
   button.type = 'button'
-  button.dataset.fullscreen = '1'
-  button.setAttribute('aria-pressed', String(isPlayerFullscreen()))
-  button.textContent = fullscreenButtonLabel(isPlayerFullscreen())
-  button.addEventListener('click', () => {
-    void togglePlayerFullscreen()
-  })
+  button.dataset.sidecar = '1'
+  button.textContent = 'Abrir no player'
+  button.addEventListener('click', () => openSidecar(held.url || playUrl()))
   return button
+}
+
+function leavePlayerScreen() {
+  const root = byId('player')
+  const playing = playingNow()
+  void exitPlayerFullscreen()
+  if (shouldPictureInPicture({ screen: state.shell.screen, playing })) {
+    dockPip()
+    root.hidden = true
+    return
+  }
+  hidePip()
+  root.hidden = true
+  held.video?.pause()
 }
 
 /** Desenha a tela do player com vídeo, nota e URL. */
 export function renderPlayer() {
   const root = byId('player')
   const visible = state.shell.screen === 'player'
-  root.hidden = !visible
   if (!visible) {
-    held.video?.pause()
-    void exitPlayerFullscreen()
+    leavePlayerScreen()
     return
   }
+  hidePip()
+  root.hidden = false
   const item = state.shell.selectedItem
   const url = playUrl()
   const title = el('h1', playerTitleClass(), item?.name ?? 'Sem título')
@@ -341,8 +397,6 @@ export function renderPlayer() {
   if (url) {
     const media = playerVideo(url, item)
     if (media.source.kind === 'hls' || media.source.kind === 'progressive') frame = media.frame
-    after.push(favButton(), fullscreenButton())
-    if (media.source.kind === 'sidecar' || tauriInvoke()) after.push(sidecarButton(url))
     note.textContent = playerNote(media.source)
   } else if (state.shell.catalogKind === 'series') {
     ensureSeriesUrl(item)
