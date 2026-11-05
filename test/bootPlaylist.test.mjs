@@ -35,7 +35,32 @@ function xcPlaylist() {
   }
 }
 
-test('prefere M3U mesmo com XC na lista', async () => {
+test('prefere XC que o portal aceita mesmo com M3U na lista', async () => {
+  const xc = xcPlaylist()
+  const m3u = {
+    kind: 'm3u',
+    id: 'pl-2',
+    name: fakerPlaylistName(),
+    url: `${fakerPortal({ protocol: 'https', port: 443 })}/list.m3u`,
+    content: fakerM3uPlaylist(),
+  }
+  const login = fakerXtreamLogin({
+    username: xc.username,
+    password: xc.password,
+    portal: xc.portal,
+  })
+  const picked = await pickBootPlaylist([m3u, xc.playlist], {
+    fetch: createFakeXtreamPortal({
+      username: xc.username,
+      password: xc.password,
+      login,
+    }),
+  })
+  assert.equal(picked.kind, 'xc')
+  assert.equal(picked.playlist.id, xc.playlist.id)
+})
+
+test('cai na M3U quando o XC do painel recusa', async () => {
   const xc = xcPlaylist()
   const m3u = {
     kind: 'm3u',

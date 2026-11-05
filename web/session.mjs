@@ -314,7 +314,7 @@ export async function bootSeed() {
   return rememberSeed(draft, picked.client, password)
 }
 
-/** Entra na M3U salva, ou no primeiro XC que o portal aceita. */
+/** Entra no primeiro XC que o portal aceita, ou na M3U salva. */
 export async function bootSaved() {
   return activatePicked(
     await pickBootPlaylist(playlistStore.list(), { fetch: webFetch(), readSecret }),

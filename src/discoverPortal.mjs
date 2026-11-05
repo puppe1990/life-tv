@@ -1,10 +1,10 @@
 import { parseXtreamLogin } from './parseXtreamLogin.mjs'
-import { normalizePortal, playerApiUrl } from './xtreamUrls.mjs'
+import { normalizePortal, playerApiUrl, xtreamFetchInit } from './xtreamUrls.mjs'
 
 /** Tenta um portal e devolve usuário ou o motivo da recusa. */
 async function tryPortal(portal, username, password, fetchFn) {
   try {
-    const res = await fetchFn(playerApiUrl({ portal, username, password }))
+    const res = await fetchFn(playerApiUrl({ portal, username, password }), xtreamFetchInit())
     if (!res.ok) return { portal, error: `HTTP ${res.status}` }
     return { portal, user: parseXtreamLogin(await res.json()) }
   } catch (error) {

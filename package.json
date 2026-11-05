@@ -24,6 +24,7 @@
     "tauri:dist": "npm run css && node scripts/make-tauri-dist.mjs",
     "tauri:dev": "npm run tauri:dist && cargo run --manifest-path src-tauri/Cargo.toml",
     "prepare": "husky",
+    "postinstall": "node scripts/vendor-hls.mjs",
     "tauri:app": "bash scripts/build-macos-app.sh"
   },
   "lint-staged": {
@@ -47,5 +48,8 @@
     "lint-staged": "^16.4.0",
     "prettier": "^3.9.8",
     "tailwindcss": "^4.3.3"
+  },
+  "dependencies": {
+    "hls.js": "^1.7.4"
   }
 }

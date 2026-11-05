@@ -11,11 +11,22 @@ import {
   timeshiftUrl,
   xmltvUrl,
   xcGetPhpUrl,
+  XTREAM_USER_AGENT,
+  xtreamFetchInit,
 } from '../src/xtreamUrls.mjs'
 import { faker, fakerPassword, fakerPortal, fakerUsername, fakerVodStream } from './factories.mjs'
 
 beforeEach(() => {
   faker.seed(42)
+})
+
+test('xtreamFetchInit grava User-Agent Life TV', () => {
+  assert.equal(XTREAM_USER_AGENT, 'Life TV/0.1')
+  assert.equal(xtreamFetchInit().headers['User-Agent'], 'Life TV/0.1')
+  assert.equal(
+    xtreamFetchInit({ headers: { Accept: 'application/json' } }).headers.Accept,
+    'application/json',
+  )
 })
 
 test('normalizePortal tira barra final e player_api.php do faker', () => {

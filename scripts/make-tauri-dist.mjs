@@ -29,6 +29,11 @@ async function buildTauriDist() {
   await mkdir(DIST, { recursive: true })
   await copySources('web', 'web')
   await copySources('src', 'web/src')
+  await mkdir(join(DIST, 'web/vendor'), { recursive: true })
+  await cp(
+    join(ROOT, 'node_modules/hls.js/dist/hls.light.min.mjs'),
+    join(DIST, 'web/vendor/hls.mjs'),
+  )
   await rewriteModuleImports()
   return DIST
 }

@@ -1,7 +1,11 @@
 import { createTvShell, focusHome, handleKey, openHomeTile } from '../src/tvShell.mjs'
 import { BRAND } from './config.mjs'
 import { byId } from './dom.mjs'
+import { Hls } from './vendor/hls.mjs'
+import { setHlsEngine } from './playerView.mjs'
 import { renderAll } from './render.mjs'
+
+setHlsEngine(Hls)
 import {
   bootSaved,
   bootSeed,
@@ -78,6 +82,10 @@ async function boot() {
   byId('search').addEventListener('input', renderAll)
   wireHomeTiles()
   wireTabs()
+  document.querySelector('a[href="#home"]')?.addEventListener('click', (event) => {
+    event.preventDefault()
+    goToScreen({ screen: 'home' })
+  })
   byId('savedPlaylists')?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-playlist-id]')
     if (button) void openSavedPlaylist(button.dataset.playlistId)

@@ -1,68 +1,80 @@
 const TILE_BASE =
-  'min-h-[120px] p-4 md:min-h-[180px] md:p-7 border-2 bg-panel text-[clamp(18px,1.6vw,30px)] text-left cursor-pointer transition-colors'
+  'relative overflow-hidden rounded-lg bg-panel text-left cursor-pointer min-h-[120px] p-4 md:min-h-[160px] md:p-6 font-display text-[clamp(18px,1.6vw,28px)] font-bold transition-colors ring-1 ring-white/10'
 
-const ITEM_BASE = 'py-2 px-3 md:py-3 md:px-5 text-[clamp(14px,1.1vw,24px)] border-l-4'
+const ITEM_BASE =
+  'flex items-center gap-3 rounded-lg p-3 md:p-3 cursor-pointer bg-panel text-ink ring-1 ring-transparent'
+
+const CHIP_BASE =
+  'inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-3 py-1.5 font-sans text-[12px] font-bold tracking-[0.04em]'
 
 /** Classes Tailwind 10-foot. Literais inteiras pro scanner do CLI. */
 export function tileClass(selected) {
   if (selected) {
-    return `${TILE_BASE} border-accent bg-row text-accent`
+    return `${TILE_BASE} ring-2 ring-accent bg-row text-ink`
   }
-  return `${TILE_BASE} border-line text-ink`
+  return `${TILE_BASE} text-ink`
 }
 
 export function itemClass(selected) {
   if (selected) {
-    return `${ITEM_BASE} border-accent bg-row text-accent`
+    return `${ITEM_BASE} ring-accent bg-row`
   }
-  return `${ITEM_BASE} border-transparent text-ink`
+  return ITEM_BASE
 }
 
 export function playerUrlClass() {
-  return 'mt-6 block break-all text-[clamp(12px,0.9vw,16px)] text-mute'
+  return 'mt-4 block break-all text-[clamp(12px,0.9vw,16px)] text-mute'
 }
 
 export function catListClass() {
-  return 'm-0 p-0 list-none bg-panel'
+  return 'm-0 flex list-none flex-nowrap gap-2 overflow-x-auto p-0'
 }
 
 export function itemListClass() {
-  return 'm-0 p-0 list-none bg-panel'
+  return 'm-0 flex min-h-0 max-h-[70vh] list-none flex-col gap-2 overflow-y-auto p-0'
 }
 
 export function catItemClass(selected = false) {
   if (selected) {
-    return 'flex items-center justify-between gap-3 border-b border-line border-l-4 border-l-accent bg-row px-3 py-2 text-[clamp(14px,1.1vw,24px)] text-accent cursor-pointer md:gap-4 md:px-5 md:py-4'
+    return `${CHIP_BASE} bg-accent text-ink`
   }
-  return 'flex items-center justify-between gap-3 border-b border-line border-l-4 border-l-transparent px-3 py-2 text-[clamp(14px,1.1vw,24px)] text-ink cursor-pointer md:gap-4 md:px-5 md:py-4'
+  return `${CHIP_BASE} bg-panel text-mute`
 }
 
 export function catCountClass() {
-  return 'text-[clamp(13px,1vw,22px)] text-mute'
+  return 'text-[clamp(11px,0.8vw,14px)] text-mute'
 }
 
 export function playerTitleClass() {
-  return 'm-0 mb-3 text-[clamp(20px,2.2vw,40px)] font-semibold'
+  return 'm-0 mb-2 font-display text-[clamp(22px,2.2vw,40px)] font-bold tracking-tight'
 }
 
 export function playerNoteClass() {
-  return 'm-0 text-[clamp(14px,1vw,20px)] text-mute'
+  return 'm-0 text-[clamp(14px,1vw,18px)] text-mute'
 }
 
 export function tabClass(active) {
   if (active) {
-    return 'text-[clamp(14px,1vw,24px)] tracking-[0.06em] text-accent uppercase cursor-pointer'
+    return 'cursor-pointer border-0 bg-transparent p-0 font-sans text-[clamp(14px,1vw,18px)] font-bold text-ink'
   }
-  return 'text-[clamp(14px,1vw,24px)] tracking-[0.06em] text-ink uppercase cursor-pointer'
+  return 'cursor-pointer border-0 bg-transparent p-0 font-sans text-[clamp(14px,1vw,18px)] text-mute'
 }
 
 export function actionClass() {
-  return 'cursor-pointer border-0 bg-action px-4 py-2 text-[clamp(14px,1vw,20px)] text-ink md:px-6 md:py-3'
+  return 'inline-flex cursor-pointer items-center gap-2 rounded-lg border-0 bg-action px-4 py-2 font-sans text-[clamp(14px,1vw,16px)] font-bold text-void md:px-5 md:py-2.5'
+}
+
+export function ghostClass() {
+  return 'inline-flex cursor-pointer items-center gap-2 rounded-lg border-0 bg-row px-4 py-2 font-sans text-[clamp(14px,1vw,16px)] font-bold text-ink md:px-5 md:py-2.5'
 }
 
 export function playlistChipClass(selected) {
   if (selected) {
-    return 'cursor-pointer border-0 bg-action px-4 py-2 text-[clamp(14px,1vw,20px)] text-ink'
+    return 'cursor-pointer rounded-lg border-0 bg-accent px-4 py-2 font-sans text-[clamp(14px,1vw,16px)] font-bold text-ink'
   }
-  return 'cursor-pointer border border-line bg-transparent px-4 py-2 text-[clamp(14px,1vw,20px)] text-ink'
+  return 'cursor-pointer rounded-lg border-0 bg-panel px-4 py-2 font-sans text-[clamp(14px,1vw,16px)] text-ink'
+}
+
+export function liveBadgeClass() {
+  return 'inline-flex w-fit items-center gap-1.5 rounded bg-accent px-2 py-1 font-sans text-[10px] font-bold tracking-[0.06em] text-ink uppercase'
 }

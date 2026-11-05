@@ -40,6 +40,13 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSMinimumSystemVersion</key><string>11.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSPrincipalClass</key><string>NSApplication</string>
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsArbitraryLoads</key><true/>
+    <key>NSAllowsArbitraryLoadsForMedia</key><true/>
+    <key>NSAllowsArbitraryLoadsInWebContent</key><true/>
+    <key>NSAllowsLocalNetworking</key><true/>
+  </dict>
 </dict>
 </plist>
 PLIST
