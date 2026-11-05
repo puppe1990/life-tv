@@ -1,3 +1,5 @@
+import { xtreamFetchInit } from '../src/xtreamUrls.mjs'
+
 /** Ponte com os comandos do shell Tauri e o storage do webview. */
 export function tauriInvoke() {
   const invoke = globalThis.__TAURI__?.core?.invoke
@@ -19,9 +21,10 @@ export function localStore() {
   }
 }
 
-/** fetch do shell quando existe, senão o global. */
+/** fetch do shell quando existe, senão o global. Sempre manda o UA do player_api. */
 export function webFetch() {
-  return tauriFetch() ?? globalThis.fetch.bind(globalThis)
+  const inner = tauriFetch() ?? globalThis.fetch.bind(globalThis)
+  return (url, init) => inner(url, xtreamFetchInit(init))
 }
 
 /** Grava a senha no cofre local; false quando não há shell. */

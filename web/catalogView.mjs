@@ -1,21 +1,26 @@
 import { filterCategories } from '../src/catalogFilter.mjs'
+import { channelMark } from '../src/channelMark.mjs'
+import { epgProgress } from '../src/epgProgress.mjs'
 import { HOME_TILES } from '../src/tvShell.mjs'
 import {
   actionClass,
   catCountClass,
   catItemClass,
   catListClass,
+  ghostClass,
   itemClass,
   itemListClass,
+  liveBadgeClass,
   playerNoteClass,
   playerTitleClass,
   tabClass,
   tileClass,
 } from '../src/tvSkin.mjs'
 import { byId, el } from './dom.mjs'
+import { ICON_HEART, ICON_PLAY, iconSvg } from './icons.mjs'
+import { ensureEpg, epgBlock } from './playerView.mjs'
 import { state } from './state.mjs'
 import { favStore } from './stores.mjs'
-import { ensureEpg, epgBlock } from './playerView.mjs'
 
 const TAB_SCREENS = {
   'tab-inicio': 'home',
@@ -25,70 +30,73 @@ const TAB_SCREENS = {
   'tab-settings': 'settings',
 }
 
-/** Home, abas e catálogo em três colunas (categorias, itens, detalhe). */
-
 const FEATURED_KIND = { live: 'Ao vivo', movies: 'Filme', series: 'Série' }
 
-function renderFeaturedPoster(featured) {
+function actionButton(className, icon, label, onClick) {
+  const button = el('button', className)
+  button.type = 'button'
+  button.append(iconSvg(icon, 16), document.createTextNode(` ${label}`))
+  button.addEventListener('click', onClick)
+  return button
+}
+
+function progressBar(fraction, widthClass = 'w-32') {
+  const track = el('div', `mt-1.5 h-1 overflow-hidden rounded-full bg-well ${widthClass}`)
+  const fill = el('div', 'h-full bg-accent')
+  fill.style.width = `${Math.round(Math.min(1, Math.max(0, fraction)) * 100)}%`
+  track.append(fill)
+  return track
+}
+
+function itemMark(item) {
   const box = el(
     'div',
-    'h-[120px] w-[90px] shrink-0 overflow-hidden border border-line bg-well md:h-[240px] md:w-[170px]',
+    'flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-well font-display text-[15px] font-bold text-accent',
   )
-  if (!featured.poster) return box
-  const image = el('img', 'h-full w-full object-cover')
-  image.src = featured.poster
-  image.alt = featured.name
-  box.append(image)
+  if (item.icon) {
+    const image = el('img', 'h-full w-full object-contain')
+    image.src = item.icon
+    image.alt = ''
+    box.append(image)
+    return box
+  }
+  box.textContent = channelMark(item.name)
   return box
 }
 
-function renderFeaturedBadges(featured) {
-  const row = el('div', 'flex flex-wrap items-center gap-2')
-  const kind = FEATURED_KIND[featured.kind]
-  if (kind) {
-    row.append(
-      el('span', 'bg-accent px-3 py-1 text-[clamp(12px,0.9vw,16px)] font-semibold text-void', kind),
-    )
-  }
-  if (featured.year) {
-    row.append(el('span', 'bg-row px-3 py-1 text-[clamp(12px,0.9vw,16px)]', featured.year))
-  }
-  if (featured.rating) {
-    row.append(
-      el(
-        'span',
-        'bg-row px-3 py-1 text-[clamp(12px,0.9vw,16px)] text-mute',
-        `★ ${featured.rating}`,
-      ),
-    )
-  }
-  return row
+function artUrl(entry) {
+  return entry?.backdrop || entry?.poster || entry?.icon || ''
 }
 
 function renderFeatured() {
   const featured = state.featured
   if (!featured) return []
-  const card = el(
-    'article',
-    'relative overflow-hidden border border-line bg-linear-to-br from-panel to-well',
-  )
-  if (featured.backdrop) {
-    const backdrop = el('div', 'absolute inset-0 bg-cover bg-center opacity-25')
-    backdrop.style.backgroundImage = `url("${featured.backdrop}")`
+  const card = el('article', 'relative overflow-hidden rounded-lg bg-well')
+  const art = artUrl(featured)
+  if (art) {
+    const backdrop = el('div', 'absolute inset-0 bg-cover bg-center')
+    backdrop.style.backgroundImage = `url("${art}")`
     card.append(backdrop)
+  } else {
+    card.append(el('div', 'absolute inset-0 bg-linear-to-br from-accent/25 via-void to-void'))
   }
+  card.append(el('div', 'absolute inset-0 bg-linear-to-t from-void via-void/70 to-black/40'))
   const content = el(
     'div',
-    'relative flex flex-col gap-5 p-4 md:flex-row md:items-end md:gap-8 md:p-8',
+    'relative flex min-h-[280px] flex-col justify-end gap-3 p-6 md:min-h-[420px] md:p-10',
   )
-  content.append(renderFeaturedPoster(featured))
-  const info = el('div', 'grid min-w-0 gap-3')
-  info.append(el('h2', 'm-0 text-[clamp(22px,2.4vw,44px)] font-semibold', featured.name))
-  info.append(renderFeaturedBadges(featured))
+  const kind = FEATURED_KIND[featured.kind]
+  if (kind) content.append(el('span', liveBadgeClass(), kind))
+  content.append(
+    el(
+      'h2',
+      'm-0 max-w-[22ch] font-display text-[clamp(32px,4vw,56px)] font-black tracking-tight',
+      featured.name,
+    ),
+  )
   if (featured.plot) {
-    info.append(el('p', 'm-0 max-w-[70ch] text-[clamp(14px,1vw,20px)] text-mute', featured.plot))
+    content.append(el('p', 'm-0 max-w-[62ch] text-[15px] text-mute', featured.plot))
   }
-  content.append(info)
   card.append(content)
   return [card]
 }
@@ -97,7 +105,7 @@ export function renderHome() {
   const root = byId('home')
   root.hidden = state.shell.screen !== 'home'
   if (root.hidden) return
-  const tiles = el('div', 'grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 md:gap-6')
+  const tiles = el('div', 'grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6')
   tiles.append(
     ...HOME_TILES.map((tile) => {
       const button = el('button', tileClass(tile.id === state.shell.homeId), tile.label)
@@ -165,22 +173,74 @@ function renderCategories(categories) {
   }
 }
 
+function listingOf(item) {
+  if (state.epg.key !== String(item.id)) return null
+  return state.epg.listings[0] ?? null
+}
+
 function renderItems(categories) {
   const list = byId('items')
   list.className = itemListClass()
   list.replaceChildren()
   const category = categories.find((entry) => entry.sourceIndex === state.shell.categoryIndex)
+  const live = state.shell.catalogKind === 'live'
   for (const [index, item] of (category?.items ?? []).entries()) {
     const selected = item.id === state.shell.selectedItem?.id
     const row = el('li', itemClass(selected))
     row.setAttribute('aria-selected', String(selected))
     row.append(
-      el('span', 'mr-4 text-mute', String(index + 1).padStart(2, '0')),
-      el('span', '', item.name),
+      el(
+        'span',
+        `w-7 shrink-0 font-mono text-[12px] font-bold ${selected ? 'text-accent' : 'text-mute'}`,
+        String(index + 1).padStart(2, '0'),
+      ),
+      itemMark(item),
     )
+    const body = el('div', 'min-w-0 flex-1')
+    body.append(el('span', 'block truncate font-display text-[15px] font-bold', item.name))
+    const listing = live ? listingOf(item) : null
+    if (listing) {
+      body.append(el('p', 'm-0 truncate text-[12px] text-mute', listing.title))
+      body.append(progressBar(epgProgress(listing)))
+    }
+    row.append(body)
+    if (live && selected) {
+      row.append(el('span', liveBadgeClass(), 'No ar'))
+    }
     row.addEventListener('click', () => selectItem(item))
     list.append(row)
   }
+}
+
+function renderStage(item) {
+  const stage = el('div', 'relative aspect-video overflow-hidden rounded-lg bg-well')
+  const art = artUrl(item)
+  if (art) {
+    const photo = el('div', 'absolute inset-0 bg-cover bg-center')
+    photo.style.backgroundImage = `url("${art}")`
+    stage.append(photo)
+  } else {
+    const mark = el(
+      'div',
+      'absolute inset-0 flex items-center justify-center font-display text-[72px] font-black text-accent/80',
+      channelMark(item.name),
+    )
+    stage.append(mark)
+  }
+  stage.append(el('div', 'absolute inset-0 bg-linear-to-t from-void via-void/40 to-black/50'))
+  const top = el('div', 'absolute top-4 left-4 flex items-center gap-2')
+  if (state.shell.catalogKind === 'live') {
+    top.append(el('span', liveBadgeClass(), 'Ao vivo'))
+  }
+  top.append(
+    el(
+      'span',
+      'rounded bg-black/60 px-2 py-0.5 font-sans text-[10px] font-bold text-ink',
+      item.name,
+    ),
+  )
+  stage.append(top)
+  return stage
 }
 
 function renderDetail() {
@@ -190,31 +250,70 @@ function renderDetail() {
     root.replaceChildren()
     return
   }
-  const nodes = [el('h2', playerTitleClass(), item.name)]
-  nodes.push(
+  const nodes = [renderStage(item)]
+  const meta = el('div', 'mt-4 rounded-lg bg-panel p-5')
+  meta.append(el('h2', playerTitleClass(), item.name))
+  meta.append(
     el('p', playerNoteClass(), `#${item.id}${item.extension ? ` · ${item.extension}` : ''}`),
   )
   if (state.shell.catalogKind === 'live') {
     ensureEpg(item)
-    if (state.epg.listings.length) nodes.push(epgBlock(item))
+    if (state.epg.listings.length) meta.append(epgBlock(item))
   }
-  const actions = el('div', 'flex flex-wrap gap-3')
-  const play = el('button', actionClass(), 'Assistir')
-  play.type = 'button'
-  play.addEventListener('click', () => selectItem(item))
-  const fav = el(
-    'button',
-    actionClass(),
-    favStore.isFav(item.id) ? 'Remover favorito' : 'Add to Favorite',
+  const actions = el('div', 'mt-4 flex flex-wrap gap-2')
+  actions.append(
+    actionButton(actionClass(), ICON_PLAY, 'Assistir', () => selectItem(item)),
+    actionButton(
+      ghostClass(),
+      ICON_HEART,
+      favStore.isFav(item.id) ? 'Remover favorito' : 'Favoritar',
+      () => {
+        favStore.toggleFav(item.id)
+        state.redraw()
+      },
+    ),
   )
-  fav.type = 'button'
-  fav.addEventListener('click', () => {
-    favStore.toggleFav(item.id)
-    state.redraw()
-  })
-  actions.append(play, fav)
-  nodes.push(actions)
+  meta.append(actions)
+  nodes.push(meta)
   root.replaceChildren(...nodes)
+}
+
+function shelfCard(item) {
+  const card = el('button', 'group overflow-hidden rounded-lg bg-panel text-left cursor-pointer')
+  card.type = 'button'
+  const art = el('div', 'relative aspect-video bg-well bg-cover bg-center')
+  if (item.icon) art.style.backgroundImage = `url("${item.icon}")`
+  art.append(el('div', 'absolute inset-0 bg-linear-to-t from-panel to-black/30'))
+  if (state.shell.catalogKind === 'live') {
+    const badge = el('div', 'absolute top-3 left-3')
+    badge.append(el('span', liveBadgeClass(), 'Ao vivo'))
+    art.append(badge)
+  }
+  card.append(art)
+  const body = el('div', 'grid gap-1 p-4')
+  body.append(el('h3', 'm-0 font-display text-[18px] font-bold text-ink', item.name))
+  card.append(body)
+  card.addEventListener('click', () => selectItem(item))
+  return card
+}
+
+function renderShelf(categories) {
+  const root = byId('shelf')
+  if (!root) return
+  const category = categories.find((entry) => entry.sourceIndex === state.shell.categoryIndex)
+  const items = (category?.items ?? []).slice(0, 3)
+  if (items.length === 0) {
+    root.replaceChildren()
+    return
+  }
+  const heading = el(
+    'h2',
+    'mb-4 font-display text-[clamp(22px,2vw,32px)] font-bold tracking-tight text-ink',
+    state.shell.catalogKind === 'live' ? 'No ar agora' : 'Em destaque',
+  )
+  const grid = el('div', 'grid grid-cols-1 gap-6 md:grid-cols-3')
+  grid.append(...items.map(shelfCard))
+  root.replaceChildren(heading, grid)
 }
 
 /** Desenha categorias, itens e detalhe do catálogo. */
@@ -226,4 +325,5 @@ export function renderCatalog() {
   renderCategories(categories)
   renderItems(categories)
   renderDetail()
+  renderShelf(categories)
 }

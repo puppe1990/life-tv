@@ -2,6 +2,15 @@
  * URLs públicas do Xtream Codes (player_api / get.php / live|movie|series).
  * Equivale a GetSharedInfo.getPlaylistUrl no FlexTV, sem POST de MAC.
  */
+
+/** UA do player_api que o painel XC aceita. */
+export const XTREAM_USER_AGENT = 'Life TV/0.1'
+
+/** Init de fetch com o UA que o player_api aceita. */
+export function xtreamFetchInit(init = {}) {
+  return { ...init, headers: { ...(init.headers ?? {}), 'User-Agent': XTREAM_USER_AGENT } }
+}
+
 export function normalizePortal(url) {
   if (typeof url !== 'string' || url.trim() === '') {
     throw new Error(`portal recusado: recebido ${JSON.stringify(url)}, esperado URL http(s)`)

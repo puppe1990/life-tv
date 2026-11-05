@@ -41,7 +41,7 @@ function moviesCatalog() {
 
 test('home desenha os quatro tiles e marca o selecionado', () => {
   renderHome()
-  const tiles = document.querySelectorAll('#home button')
+  const tiles = document.querySelectorAll('#home [data-tile]')
   assert.equal(tiles.length, 4)
   assert.equal(tiles[0].getAttribute('aria-selected'), 'true')
   assert.equal(tiles[0].dataset.tile, 'live')
@@ -83,7 +83,7 @@ test('detalhe mostra título, botões e marca favorito', () => {
   const detail = document.querySelector('#detail')
   assert.match(detail.textContent, /Alfa/)
   assert.match(detail.textContent, /Assistir/)
-  assert.match(detail.textContent, /Add to Favorite/)
+  assert.match(detail.textContent, /Favoritar/)
 })
 
 test('selectCategory troca a categoria e seleciona o primeiro item', () => {
@@ -119,11 +119,11 @@ test('selectItem abre o player no item escolhido', () => {
   assert.equal(state.shell.itemIndex, 1)
 })
 
-test('abas marcam a ativa com a classe do amarelo', () => {
+test('abas marcam a ativa em negrito', () => {
   state.shell = { ...createTvShell(), screen: 'catalog', catalogKind: 'movies' }
   renderTabs()
-  assert.match(document.getElementById('tab-movies').className, /text-accent/)
-  assert.equal(document.getElementById('tab-inicio').className.includes('text-accent'), false)
+  assert.match(document.getElementById('tab-movies').className, /font-bold/)
+  assert.equal(document.getElementById('tab-inicio').className.includes('font-bold'), false)
 })
 
 test('home mostra o destaque quando há item escolhido', () => {
@@ -133,6 +133,21 @@ test('home mostra o destaque quando há item escolhido', () => {
   assert.ok(hero)
   assert.match(hero.textContent, /TV Cultura/)
   assert.match(hero.textContent, /Ao vivo/)
-  assert.equal(document.querySelectorAll('#home button').length, 4)
+  assert.equal(document.querySelectorAll('#home [data-tile]').length, 4)
   state.featured = null
+})
+
+test('catálogo ao vivo mostra marca e selo no detalhe', () => {
+  const first = { id: 521, name: 'ESPN 1 HD', icon: '' }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [{ id: '1', name: 'Esportes', items: [first] }] },
+    selectedItem: first,
+  }
+  renderCatalog()
+  assert.match(document.querySelector('#items li').textContent, /E1/)
+  assert.match(document.querySelector('#items li').textContent, /01/)
+  assert.match(document.querySelector('#detail').textContent, /Ao vivo/)
 })

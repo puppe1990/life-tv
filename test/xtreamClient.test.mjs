@@ -28,6 +28,26 @@ function makeXc() {
   return { portal, username, password, login }
 }
 
+test('login envia User-Agent Life TV no player_api', async () => {
+  const xc = makeXc()
+  let seen
+  const inner = createFakeXtreamPortal({
+    username: xc.username,
+    password: xc.password,
+    login: xc.login,
+  })
+  const fetchFn = async (url, init) => {
+    seen = init
+    return inner(url)
+  }
+  const client = createXtreamClient({
+    playlist: { kind: 'xc', portal: xc.portal, username: xc.username, password: xc.password },
+    fetch: fetchFn,
+  })
+  await client.login()
+  assert.equal(seen?.headers?.['User-Agent'], 'Life TV/0.1')
+})
+
 test('login no portal fake usa user_info do faker', async () => {
   const xc = makeXc()
   const fetchFn = createFakeXtreamPortal({

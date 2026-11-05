@@ -13,6 +13,7 @@ import {
   seriesStreamUrl,
   timeshiftUrl,
   xmltvUrl,
+  xtreamFetchInit,
 } from './xtreamUrls.mjs'
 
 async function readBody(res, url) {
@@ -23,7 +24,7 @@ async function readBody(res, url) {
 
 async function getJson(fetchFn, cred, action, params = null) {
   const url = playerApiUrl({ ...cred, action, params })
-  const raw = await readBody(await fetchFn(url), url)
+  const raw = await readBody(await fetchFn(url, xtreamFetchInit()), url)
   try {
     return JSON.parse(raw)
   } catch {
@@ -32,7 +33,7 @@ async function getJson(fetchFn, cred, action, params = null) {
 }
 
 async function getText(fetchFn, url) {
-  return readBody(await fetchFn(url), url)
+  return readBody(await fetchFn(url, xtreamFetchInit()), url)
 }
 
 function decodeBase64Text(value) {

@@ -16,6 +16,29 @@ function portalFetch(validPortal, user) {
   }
 }
 
+test('descoberta envia User-Agent Life TV', async () => {
+  const good = `http://${faker.internet.domainName()}`
+  const user = {
+    username: faker.internet.username(),
+    auth: 1,
+    status: 'Active',
+    exp_date: '1793371571',
+    max_connections: '1',
+    active_cons: '0',
+  }
+  let seen
+  await discoverPortal({
+    candidates: [good],
+    username: user.username,
+    password: 'x',
+    fetch: async (url, init) => {
+      seen = init
+      return { ok: true, status: 200, json: async () => ({ user_info: user }) }
+    },
+  })
+  assert.equal(seen?.headers?.['User-Agent'], 'Life TV/0.1')
+})
+
 test('acha o portal que aceita as credenciais', async () => {
   const good = `http://${faker.internet.domainName()}`
   const user = {

@@ -26,7 +26,7 @@ test('boot em demo desenha a home e as abas', async () => {
   await settle()
   const tiles = document.querySelectorAll('#home [data-tile]')
   assert.equal(tiles.length, 4)
-  assert.match(document.getElementById('tab-inicio').className, /text-accent/)
+  assert.match(document.getElementById('tab-inicio').className, /font-bold/)
 })
 
 test('clicar na aba Live TV abre o catálogo com itens', async () => {
@@ -37,7 +37,7 @@ test('clicar na aba Live TV abre o catálogo com itens', async () => {
   assert.equal(document.getElementById('catalog').hidden, false)
   assert.ok(document.querySelectorAll('#categories li').length >= 1)
   assert.ok(document.querySelectorAll('#items li').length >= 1)
-  assert.match(document.getElementById('tab-live').className, /text-accent/)
+  assert.match(document.getElementById('tab-live').className, /font-bold/)
 })
 
 test('clicar no tile Ao vivo também abre o catálogo', async () => {

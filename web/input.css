@@ -1,24 +1,64 @@
 @import 'tailwindcss';
 
 @source '../src/**/*.mjs';
-@source './**/*.{html,js}';
+@source './**/*.{html,js,mjs}';
 
-@theme {
-  --font-sans: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  --font-display: 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  --color-ink: #ffffff;
-  --color-mute: #9aa0a6;
-  --color-accent: #ffd400;
-  --color-action: #1a6fd4;
-  --color-panel: #17181b;
-  --color-row: #202227;
-  --color-line: #2b2e33;
-  --color-void: #05070b;
-  --color-well: #101216;
-  --color-warn: #ff6b6b;
+@font-face {
+  font-family: 'Chivo';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/chivo-700.woff2') format('woff2');
 }
 
-/* Fundo preto com o feixe azul do app original, sem custo de imagem. */
+@font-face {
+  font-family: 'Chivo';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('./fonts/chivo-800.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Chivo';
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url('./fonts/chivo-900.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/dm-sans-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/dm-sans-700.woff2') format('woff2');
+}
+
+@theme {
+  --font-sans: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Chivo', 'Helvetica Neue', Arial, sans-serif;
+  --color-ink: #e5e2e1;
+  --color-mute: #aaaaaa;
+  --color-accent: #e50914;
+  --color-action: #ffffff;
+  --color-panel: #1c1b1b;
+  --color-row: #2a2a2a;
+  --color-line: #353534;
+  --color-void: #0b0b0b;
+  --color-well: #141414;
+  --color-warn: #ffb4ab;
+  --color-good: #46d369;
+}
+
 @layer base {
   html {
     color-scheme: dark;
@@ -31,14 +71,21 @@
   }
 
   body {
-    background:
-      radial-gradient(1100px 620px at 88% -10%, rgb(26 111 212 / 0.35) 0%, transparent 62%),
-      radial-gradient(700px 420px at 100% 55%, rgb(26 111 212 / 0.18) 0%, transparent 70%),
-      var(--color-void);
+    background: var(--color-void);
     color: var(--color-ink);
   }
 
   [hidden] {
     display: none !important;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-line);
+    border-radius: 4px;
   }
 }

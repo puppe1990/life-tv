@@ -1,9 +1,24 @@
 import { playlistChipClass } from '../src/tvSkin.mjs'
+import { BRAND } from './config.mjs'
 import { renderCatalog, renderHome, renderTabs } from './catalogView.mjs'
 import { byId } from './dom.mjs'
 import { renderPlayer } from './playerView.mjs'
 import { state } from './state.mjs'
 import { playlistStore } from './stores.mjs'
+
+function renderSignal() {
+  const signal = byId('signal')
+  const avatar = byId('avatar')
+  const current = playlistStore.list().find((item) => item.id === state.playlistId)
+  const name = current?.name || BRAND
+  if (signal) {
+    signal.replaceChildren()
+    const dot = document.createElement('span')
+    dot.className = 'h-2 w-2 rounded-full bg-good'
+    signal.append(dot, document.createTextNode(name))
+  }
+  if (avatar) avatar.textContent = name.slice(0, 1).toUpperCase()
+}
 
 function renderSavedPlaylists() {
   const list = byId('savedPlaylists')
@@ -31,5 +46,6 @@ export function renderAll() {
   renderPlayer()
   renderSettings()
   renderTabs()
+  renderSignal()
   byId('error').textContent = state.errorText
 }
