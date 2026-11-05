@@ -6,6 +6,7 @@ function mapItem(stream) {
     categoryId: String(stream.category_id),
   }
   if (stream.container_extension) item.extension = stream.container_extension
+  if (stream.epg_channel_id) item.epgChannelId = stream.epg_channel_id
   return item
 }
 

@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   resume: `${STORAGE_PREFIX}:resume`,
   history: `${STORAGE_PREFIX}:history`,
   catalogs: `${STORAGE_PREFIX}:catalogs`,
+  epg: `${STORAGE_PREFIX}:epg`,
 }
 
 /** Conta do cofre local onde o seed guarda a senha inicial. */

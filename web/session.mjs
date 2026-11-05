@@ -11,7 +11,8 @@ import { byId } from './dom.mjs'
 import { readSecret, readSeed, saveSecret, webFetch } from './bridge.mjs'
 import { clearError, setError, state } from './state.mjs'
 import { readFreshCatalog, writeCatalogCache } from '../src/catalogCache.mjs'
-import { catalogsBucket, playlistStore } from './stores.mjs'
+import { readFreshGuide, writeGuideCache } from '../src/epgGuideCache.mjs'
+import { catalogsBucket, epgBucket, playlistStore } from './stores.mjs'
 
 /** Cliente Xtream apontado para o portal fake do demo. */
 export function demoClient() {
@@ -115,6 +116,24 @@ export async function fillCatalog() {
     state.shell = bindCatalog(state.shell, catalog)
   } catch (error) {
     setError(error.message)
+  }
+}
+
+/** Carrega o xmltv do dia (cache sqlite) para a listagem ao vivo. */
+export async function fillGuide() {
+  const playlistId = state.playlistId
+  if (!playlistId || typeof state.client?.epg !== 'function') return
+  if (state.guide.key === playlistId) return
+  const cached = readFreshGuide(epgBucket, { playlistId })
+  state.guide = { key: playlistId, programs: cached ?? [] }
+  if (cached) return
+  try {
+    const programs = await withRotation(() => state.client.epg())
+    writeGuideCache(epgBucket, { playlistId, programs })
+    state.guide = { key: playlistId, programs }
+    state.redraw()
+  } catch {
+    state.guide = { key: playlistId, programs: [] }
   }
 }
 

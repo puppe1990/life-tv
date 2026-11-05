@@ -10,6 +10,7 @@ export const state = {
   featured: null,
   playlistId: '',
   epg: { key: '', listings: [] },
+  guide: { key: '', programs: [] },
   channelLayout: 'list',
   itemLimit: CHANNEL_CARD_PAGE,
   redraw: () => {},

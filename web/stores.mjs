@@ -20,6 +20,8 @@ const resumeBucket = makeBucket(STORAGE_KEYS.resume)
 const historyBucket = makeBucket(STORAGE_KEYS.history)
 /** Catálogo live persistido (sqlite no Tauri, memória no preview). */
 export const catalogsBucket = makeBucket(STORAGE_KEYS.catalogs)
+/** xmltv diário persistido. */
+export const epgBucket = makeBucket(STORAGE_KEYS.epg)
 
 /** No shell Tauri a senha sai da playlist e vai pro cofre local. */
 const secretlessBucket = {
@@ -55,6 +57,7 @@ export async function loadStores() {
     resumeBucket.load(),
     historyBucket.load(),
     catalogsBucket.load(),
+    epgBucket.load(),
   ])
   playlistStore.hydrate()
   favStore.hydrate()

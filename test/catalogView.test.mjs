@@ -39,6 +39,7 @@ beforeEach(() => {
   state.shell = createTvShell()
   state.channelLayout = 'list'
   state.itemLimit = CHANNEL_CARD_PAGE
+  state.guide = { programs: [] }
   state.redraw = () => {}
   historyStore.clear()
   favStore.clear()
@@ -372,6 +373,32 @@ test('modo card não pinta milhares de canais de uma vez', () => {
   renderCatalog()
   assert.equal(document.querySelectorAll('#items li').length, CHANNEL_CARD_PAGE)
   assert.match(document.querySelector('#items li').textContent, /Canal 1/)
+})
+
+test('listagem ao vivo mostra o programa xmltv no ar', () => {
+  const channel = faker.string.alpha(6)
+  const title = faker.word.words(3)
+  const first = { id: 521, name: 'ESPN 1 HD', icon: '', epgChannelId: channel }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [{ id: '1', name: 'Esportes', items: [first] }] },
+    selectedItem: first,
+  }
+  state.guide = {
+    programs: [
+      {
+        channelId: channel,
+        start: '20261030180000 +0000',
+        stop: '20261030220000 +0000',
+        title,
+      },
+    ],
+    now: Date.UTC(2026, 9, 30, 19, 0, 0),
+  }
+  renderCatalog()
+  assert.equal(document.querySelector('#items li').textContent.includes(title), true)
 })
 
 test('Filmes não mostra o botão de Cards', () => {

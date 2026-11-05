@@ -9,6 +9,7 @@ import {
 } from '../src/channelLayout.mjs'
 import { channelMark } from '../src/channelMark.mjs'
 import { epgProgress } from '../src/epgProgress.mjs'
+import { nowAndNext } from '../src/xmltvNowNext.mjs'
 import { HOME_TILES } from '../src/tvShell.mjs'
 import { itemFromWatchCard, watchCardFromItem } from '../src/watchCard.mjs'
 import {
@@ -35,6 +36,7 @@ import { byId, el } from './dom.mjs'
 import { renderHomeRows } from './homeRows.mjs'
 import { ICON_GRID, ICON_HEART, ICON_LIST, ICON_PLAY, iconSvg } from './icons.mjs'
 import { ensureEpg, epgBlock } from './playerView.mjs'
+import { fillGuide } from './session.mjs'
 import { state } from './state.mjs'
 import { favStore, historyStore } from './stores.mjs'
 
@@ -211,6 +213,11 @@ function renderCategories(categories) {
 }
 
 function listingOf(item) {
+  const fromGuide = nowAndNext(state.guide?.programs, {
+    channelId: item.epgChannelId,
+    now: state.guide?.now ?? Date.now(),
+  })
+  if (fromGuide) return fromGuide
   if (state.epg.key !== String(item.id)) return null
   return state.epg.listings[0] ?? null
 }
@@ -315,10 +322,18 @@ function renderChannelCard(item, index, selected, live) {
     art.append(el('span', `${liveBadgeClass()} absolute top-2 right-2`, 'No ar'))
   }
   art.append(favToggle(item, true))
-  card.append(
-    art,
-    el('span', 'block truncate px-2 py-2 font-display text-[13px] font-bold', item.name),
+  const caption = el(
+    'span',
+    'block truncate px-2 pt-2 font-display text-[13px] font-bold',
+    item.name,
   )
+  card.append(art, caption)
+  const listing = live ? listingOf(item) : null
+  if (listing) {
+    card.append(el('p', 'm-0 truncate px-2 pb-2 text-[11px] text-mute', listing.title))
+  } else {
+    caption.classList.add('pb-2')
+  }
   card.addEventListener('click', () => selectItem(item))
   return card
 }
@@ -477,6 +492,7 @@ export function renderCatalog() {
   const categories = filterCategories(catalogCats, byId('search')?.value)
   renderCategories(categories)
   renderItemsToolbar()
+  if (kind === 'live') void fillGuide()
   renderItems(categories)
   if (kind === 'live') {
     byId('shelf').replaceChildren()
