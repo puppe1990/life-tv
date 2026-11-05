@@ -127,6 +127,23 @@ test('loading.start usa a escala de performance.now', async () => {
   assert.ok(loader.stats.loading.end >= loader.stats.loading.first)
 })
 
+test('loader HLS manda User-Agent de player', async () => {
+  const url = `http://${faker.internet.domainName()}/index.m3u8`
+  let seen
+  const fetchFn = async (_href, init) => {
+    seen = init
+    return {
+      ok: true,
+      status: 200,
+      text: async () => '#EXTM3U\n#EXTINF:10,\nseg.ts\n',
+      arrayBuffer: async () => new ArrayBuffer(0),
+    }
+  }
+  const loader = new (createHlsFetchLoader(fetchFn))({})
+  await loadOnce(loader, { url, responseType: 'text' })
+  assert.equal(seen.headers['User-Agent'], 'iptv_smarters_player_lite')
+})
+
 test('abort marca stats e não chama onSuccess', async () => {
   const url = `http://${faker.internet.domainName()}/index.m3u8`
   let finish

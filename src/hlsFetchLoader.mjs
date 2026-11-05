@@ -1,3 +1,5 @@
+import { hlsFetchInit } from './xtreamUrls.mjs'
+
 function emptyStats() {
   return {
     aborted: false,
@@ -49,7 +51,7 @@ export function createHlsFetchLoader(fetchFn) {
       stats.loading.end = 0
       this.abortController = typeof AbortController === 'function' ? new AbortController() : null
       stats.loading.start = nowMs()
-      const init = this.abortController ? { signal: this.abortController.signal } : {}
+      const init = hlsFetchInit(this.abortController ? { signal: this.abortController.signal } : {})
       fetchFn(context.url, init)
         .then(async (response) => {
           if (stats.aborted) return

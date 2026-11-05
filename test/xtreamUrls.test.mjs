@@ -11,7 +11,9 @@ import {
   timeshiftUrl,
   xmltvUrl,
   xcGetPhpUrl,
+  HLS_PLAYER_USER_AGENT,
   XTREAM_USER_AGENT,
+  hlsFetchInit,
   xtreamFetchInit,
 } from '../src/xtreamUrls.mjs'
 import { faker, fakerPassword, fakerPortal, fakerUsername, fakerVodStream } from './factories.mjs'
@@ -27,6 +29,17 @@ test('xtreamFetchInit grava User-Agent Life TV', () => {
     xtreamFetchInit({ headers: { Accept: 'application/json' } }).headers.Accept,
     'application/json',
   )
+})
+
+test('hlsFetchInit usa UA de player e o API continua Life TV', () => {
+  assert.equal(XTREAM_USER_AGENT, 'Life TV/0.1')
+  assert.equal(HLS_PLAYER_USER_AGENT, 'iptv_smarters_player_lite')
+  assert.equal(hlsFetchInit().headers['User-Agent'], 'iptv_smarters_player_lite')
+  assert.equal(
+    hlsFetchInit({ headers: { Accept: 'application/vnd.apple.mpegurl' } }).headers.Accept,
+    'application/vnd.apple.mpegurl',
+  )
+  assert.equal(xtreamFetchInit().headers['User-Agent'], 'Life TV/0.1')
 })
 
 test('normalizePortal tira barra final e player_api.php do faker', () => {
