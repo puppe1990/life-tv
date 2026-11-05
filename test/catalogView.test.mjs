@@ -6,9 +6,14 @@ import { faker } from './factories.mjs'
 const dom = new JSDOM(`<!doctype html><body>
   <section id="home"></section>
   <section id="catalog" hidden>
-    <ul id="categories"></ul>
-    <ul id="items"></ul>
-    <aside id="detail"></aside>
+    <div id="catalog-grid">
+      <aside id="detail"></aside>
+      <div id="catalog-lists">
+        <ul id="categories"></ul>
+        <ul id="items"></ul>
+      </div>
+    </div>
+    <div id="shelf"></div>
   </section>
   <input id="search" value="" />
   <button id="tab-inicio"></button><button id="tab-live"></button>
@@ -18,7 +23,7 @@ const dom = new JSDOM(`<!doctype html><body>
 
 globalThis.document = dom.window.document
 
-const { state } = await import('../web/state.mjs')
+const { setRedraw, state } = await import('../web/state.mjs')
 const { renderCatalog, renderHome, renderTabs, selectCategory, selectItem } =
   await import('../web/catalogView.mjs')
 const { createTvShell } = await import('../src/tvShell.mjs')
@@ -28,6 +33,7 @@ beforeEach(() => {
   faker.seed(57)
   dom.window.document.getElementById('search').value = ''
   state.shell = createTvShell()
+  state.redraw = () => {}
   historyStore.clear()
   favStore.clear()
 })
@@ -211,5 +217,61 @@ test('catálogo ao vivo mostra marca e selo no detalhe', () => {
   renderCatalog()
   assert.match(document.querySelector('#items li').textContent, /E1/)
   assert.match(document.querySelector('#items li').textContent, /01/)
-  assert.match(document.querySelector('#detail').textContent, /Ao vivo/)
+  assert.match(document.querySelector('#items li').textContent, /No ar/)
+})
+
+test('catálogo ao vivo põe categorias à esquerda e canais à direita', () => {
+  const sports = {
+    id: '1',
+    name: 'Esportes',
+    items: [{ id: 521, name: 'ESPN 1 HD', icon: '' }],
+  }
+  const news = {
+    id: '2',
+    name: 'Notícias',
+    items: [{ id: 101, name: 'TV Cultura', icon: '' }],
+  }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [sports, news] },
+    selectedItem: sports.items[0],
+  }
+  renderCatalog()
+
+  assert.match(document.getElementById('catalog-grid').className, /grid-cols-\[18rem/)
+  assert.match(document.getElementById('categories').className, /flex-col/)
+  assert.equal(document.getElementById('categories').className.includes('flex-nowrap'), false)
+  assert.match(document.getElementById('items').className, /flex-col/)
+  assert.match(document.getElementById('detail').className, /hidden/)
+  assert.equal(document.getElementById('shelf').childNodes.length, 0)
+
+  const cats = document.querySelectorAll('#categories li')
+  assert.equal(cats.length, 3)
+  assert.match(cats[0].textContent, /Todos/)
+  assert.match(cats[0].textContent, /2/)
+  assert.match(cats[0].className, /w-full/)
+  assert.equal(document.querySelectorAll('#items li').length, 2)
+  setRedraw(renderCatalog)
+  cats[2].click()
+  assert.equal(state.shell.categoryIndex, 2)
+  assert.equal(state.shell.selectedItem.name, 'TV Cultura')
+  assert.match(document.querySelector('#items li').textContent, /TV Cultura/)
+})
+
+test('clicar num canal ao vivo seleciona e abre o player', () => {
+  const first = { id: 521, name: 'ESPN 1 HD', icon: '' }
+  const second = { id: 522, name: 'Band Sports', icon: '' }
+  state.shell = {
+    ...createTvShell(),
+    screen: 'catalog',
+    catalogKind: 'live',
+    catalog: { kind: 'live', categories: [{ id: '1', name: 'Esportes', items: [first, second] }] },
+    selectedItem: first,
+  }
+  renderCatalog()
+  document.querySelectorAll('#items li')[1].click()
+  assert.equal(state.shell.selectedItem.name, 'Band Sports')
+  assert.equal(state.shell.screen, 'player')
 })

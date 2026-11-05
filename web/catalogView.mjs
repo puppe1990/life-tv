@@ -1,3 +1,4 @@
+import { withAllCategory } from '../src/allCategory.mjs'
 import { filterCategories } from '../src/catalogFilter.mjs'
 import { channelMark } from '../src/channelMark.mjs'
 import { epgProgress } from '../src/epgProgress.mjs'
@@ -5,6 +6,9 @@ import { HOME_TILES } from '../src/tvShell.mjs'
 import { itemFromWatchCard, watchCardFromItem } from '../src/watchCard.mjs'
 import {
   actionClass,
+  catalogDetailClass,
+  catalogGridClass,
+  catalogListsClass,
   catCountClass,
   catItemClass,
   catListClass,
@@ -179,11 +183,12 @@ export function selectItem(item) {
 
 function renderCategories(categories) {
   const list = byId('categories')
-  list.className = catListClass()
+  const kind = state.shell.catalogKind
+  list.className = catListClass(kind)
   list.replaceChildren()
   for (const category of categories) {
     const selected = category.sourceIndex === state.shell.categoryIndex
-    const row = el('li', catItemClass(selected))
+    const row = el('li', catItemClass(selected, kind))
     row.setAttribute('aria-selected', String(selected))
     row.append(
       el('span', '', category.name),
@@ -201,7 +206,7 @@ function listingOf(item) {
 
 function renderItems(categories) {
   const list = byId('items')
-  list.className = itemListClass()
+  list.className = itemListClass(state.shell.catalogKind)
   list.replaceChildren()
   const category = categories.find((entry) => entry.sourceIndex === state.shell.categoryIndex)
   const live = state.shell.catalogKind === 'live'
@@ -342,9 +347,24 @@ export function renderCatalog() {
   const visible = state.shell.screen === 'catalog'
   byId('catalog').hidden = !visible
   if (!visible) return
-  const categories = filterCategories(state.shell.catalog?.categories, byId('search')?.value)
+  const kind = state.shell.catalogKind
+  byId('catalog-grid').className = catalogGridClass(kind)
+  byId('detail').className = catalogDetailClass(kind)
+  byId('catalog-lists').className = catalogListsClass(kind)
+  const catalogCats =
+    kind === 'live'
+      ? withAllCategory(state.shell.catalog?.categories)
+      : state.shell.catalog?.categories
+  if (kind === 'live' && state.shell.catalog && catalogCats !== state.shell.catalog.categories) {
+    state.shell = { ...state.shell, catalog: { ...state.shell.catalog, categories: catalogCats } }
+  }
+  const categories = filterCategories(catalogCats, byId('search')?.value)
   renderCategories(categories)
   renderItems(categories)
+  if (kind === 'live') {
+    byId('shelf').replaceChildren()
+    return
+  }
   renderDetail()
   renderShelf(categories)
 }
