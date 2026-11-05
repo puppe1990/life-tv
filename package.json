@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Player de playlists próprias Xtream/M3U (domínio JS, TDD). Sem VPN, MAC cloud ou streams de terceiros.",
+  "description": "Xtream/M3U player for your own playlists (JS domain, TDD). No VPN, MAC cloud, or third-party streams.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/puppe1990/openflix.git"
