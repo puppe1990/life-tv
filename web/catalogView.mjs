@@ -2,6 +2,7 @@ import { filterCategories } from '../src/catalogFilter.mjs'
 import { channelMark } from '../src/channelMark.mjs'
 import { epgProgress } from '../src/epgProgress.mjs'
 import { HOME_TILES } from '../src/tvShell.mjs'
+import { itemFromWatchCard, watchCardFromItem } from '../src/watchCard.mjs'
 import {
   actionClass,
   catCountClass,
@@ -17,10 +18,11 @@ import {
   tileClass,
 } from '../src/tvSkin.mjs'
 import { byId, el } from './dom.mjs'
+import { renderHomeRows } from './homeRows.mjs'
 import { ICON_HEART, ICON_PLAY, iconSvg } from './icons.mjs'
 import { ensureEpg, epgBlock } from './playerView.mjs'
 import { state } from './state.mjs'
-import { favStore } from './stores.mjs'
+import { favStore, historyStore } from './stores.mjs'
 
 const TAB_SCREENS = {
   'tab-inicio': 'home',
@@ -115,7 +117,26 @@ export function renderHome() {
       return button
     }),
   )
-  root.replaceChildren(...renderFeatured(), tiles)
+  root.replaceChildren(
+    ...renderFeatured(),
+    tiles,
+    ...renderHomeRows({
+      history: historyStore.list(),
+      favs: favStore.listFavs(),
+      onOpen: openHomeItem,
+    }),
+  )
+}
+
+/** Abre o player a partir de um retrato da home. */
+export function openHomeItem(card) {
+  state.shell = {
+    ...state.shell,
+    catalogKind: card.catalogKind,
+    selectedItem: itemFromWatchCard(card),
+    screen: 'player',
+  }
+  state.redraw()
 }
 
 /** Marca a aba ativa pelo estado atual. */
@@ -268,7 +289,7 @@ function renderDetail() {
       ICON_HEART,
       favStore.isFav(item.id) ? 'Remover favorito' : 'Favoritar',
       () => {
-        favStore.toggleFav(item.id)
+        favStore.toggleFav(item.id, watchCardFromItem(item, state.shell.catalogKind))
         state.redraw()
       },
     ),

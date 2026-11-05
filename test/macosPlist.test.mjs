@@ -2,6 +2,14 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 
+test('capability libera set-fullscreen da janela', async () => {
+  const raw = await readFile(
+    new URL('../src-tauri/capabilities/default.json', import.meta.url),
+    'utf8',
+  )
+  assert.match(raw, /core:window:allow-set-fullscreen/)
+})
+
 test('Info.plist do .app libera HTTP do WebKit para o stream', async () => {
   const script = await readFile(new URL('../scripts/build-macos-app.sh', import.meta.url), 'utf8')
   assert.match(script, /NSAppTransportSecurity/)

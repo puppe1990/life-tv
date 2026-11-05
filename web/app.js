@@ -1,6 +1,8 @@
+import { shouldConsumeEscape } from '../src/fullscreen.mjs'
 import { createTvShell, focusHome, handleKey, openHomeTile } from '../src/tvShell.mjs'
 import { BRAND } from './config.mjs'
 import { byId } from './dom.mjs'
+import { exitPlayerFullscreen, isPlayerFullscreen, togglePlayerFullscreen } from './fullscreen.mjs'
 import { Hls } from './vendor/hls.mjs'
 import { setHlsEngine } from './playerView.mjs'
 import { renderAll } from './render.mjs'
@@ -45,6 +47,20 @@ function goToScreen({ screen, catalogKind = null }) {
 
 async function onKey(event) {
   if (event.target.matches('input, textarea') && event.key !== 'Escape') return
+  if (event.key === 'Escape' && shouldConsumeEscape(isPlayerFullscreen())) {
+    event.preventDefault()
+    await exitPlayerFullscreen()
+    return
+  }
+  if (
+    (event.key === 'f' || event.key === 'F') &&
+    state.shell.screen === 'player' &&
+    !event.target.matches('input, textarea')
+  ) {
+    event.preventDefault()
+    await togglePlayerFullscreen()
+    return
+  }
   const next = handleKey(state.shell, event.key)
   if (next === state.shell) return
   event.preventDefault()

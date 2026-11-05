@@ -74,3 +74,77 @@ test('hidrata favoritos e locks do bucket', () => {
   assert.equal(reaberta.isFav(streamId), true)
   assert.equal(reaberta.isLocked(streamId), true)
 })
+
+test('toggleFav guarda o retrato e listFavs devolve o mais novo na frente', () => {
+  const store = createFavLockStore()
+  const espn = {
+    streamId: String(faker.number.int({ min: 100, max: 999 })),
+    name: 'ESPN 1 HD',
+    catalogKind: 'live',
+  }
+  const band = {
+    streamId: String(faker.number.int({ min: 1000, max: 9999 })),
+    name: 'Band Sports',
+    catalogKind: 'live',
+  }
+  store.toggleFav(espn.streamId, espn)
+  store.toggleFav(band.streamId, band)
+  const listed = store.listFavs()
+  assert.equal(listed.length, 2)
+  assert.equal(listed[0].name, 'Band Sports')
+  assert.equal(listed[1].name, 'ESPN 1 HD')
+})
+
+test('desfavoritar tira o retrato da lista', () => {
+  const store = createFavLockStore()
+  const card = {
+    streamId: String(faker.number.int({ min: 100, max: 999 })),
+    name: 'ESPN 1 HD',
+    catalogKind: 'live',
+  }
+  store.toggleFav(card.streamId, card)
+  store.toggleFav(card.streamId)
+  assert.equal(store.listFavs().length, 0)
+  assert.equal(store.isFav(card.streamId), false)
+})
+
+test('hidrata retratos do bucket antigo sem cards', () => {
+  const storage = createStorage()
+  storage.setItem('life-tv:favs', JSON.stringify({ favs: ['521'], locks: {} }))
+  const store = createFavLockStore({
+    bucket: createJsonBucket({ storage, key: 'life-tv:favs' }),
+  })
+  assert.equal(store.isFav('521'), true)
+  assert.equal(store.listFavs().length, 0)
+})
+
+test('hidrata retratos gravados no bucket', () => {
+  const storage = createStorage()
+  const card = {
+    streamId: String(faker.number.int({ min: 100, max: 999 })),
+    name: 'Band Sports',
+    catalogKind: 'live',
+    icon: '',
+    url: '',
+    extension: '',
+  }
+  const store = createFavLockStore({
+    bucket: createJsonBucket({ storage, key: 'life-tv:favs' }),
+  })
+  store.toggleFav(card.streamId, card)
+  const reaberta = createFavLockStore({
+    bucket: createJsonBucket({ storage, key: 'life-tv:favs' }),
+  })
+  assert.deepEqual(reaberta.listFavs()[0], card)
+})
+
+test('clear esvazia favoritos persistidos', () => {
+  const storage = createStorage()
+  const store = createFavLockStore({
+    bucket: createJsonBucket({ storage, key: 'life-tv:favs' }),
+  })
+  store.toggleFav('521', { streamId: '521', name: 'ESPN 1 HD', catalogKind: 'live' })
+  store.clear()
+  assert.equal(store.isFav('521'), false)
+  assert.equal(store.listFavs().length, 0)
+})

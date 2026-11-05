@@ -4,6 +4,7 @@ import { createJsonBucket } from '../src/jsonBucket.mjs'
 import { redactPlaylist } from '../src/playlistSecret.mjs'
 import { createResumeStore } from '../src/resumeStore.mjs'
 import { createSqliteBucket, migrateLocalToSqlite } from '../src/sqliteBucket.mjs'
+import { createWatchHistoryStore } from '../src/watchHistoryStore.mjs'
 import { localStore, tauriInvoke } from './bridge.mjs'
 import { STORAGE_KEYS } from './config.mjs'
 
@@ -16,6 +17,7 @@ function makeBucket(key) {
 const playlistsBucket = makeBucket(STORAGE_KEYS.playlists)
 const favsBucket = makeBucket(STORAGE_KEYS.favs)
 const resumeBucket = makeBucket(STORAGE_KEYS.resume)
+const historyBucket = makeBucket(STORAGE_KEYS.history)
 
 /** No shell Tauri a senha sai da playlist e vai pro cofre local. */
 const secretlessBucket = {
@@ -33,6 +35,8 @@ export const playlistStore = createPlaylistStore({ bucket: secretlessBucket })
 export const favStore = createFavLockStore({ bucket: favsBucket })
 /** Posição de retomada por stream_id, persistida. */
 export const resumeStore = createResumeStore({ bucket: resumeBucket })
+/** Canais e títulos abertos recentemente, persistidos. */
+export const historyStore = createWatchHistoryStore({ bucket: historyBucket })
 
 /** No Tauri, migra localStorage → sqlite e hidrata as stores. */
 export async function loadStores() {
@@ -43,8 +47,14 @@ export async function loadStores() {
     storage: localStore(),
     keys: Object.values(STORAGE_KEYS),
   })
-  await Promise.all([playlistsBucket.load(), favsBucket.load(), resumeBucket.load()])
+  await Promise.all([
+    playlistsBucket.load(),
+    favsBucket.load(),
+    resumeBucket.load(),
+    historyBucket.load(),
+  ])
   playlistStore.hydrate()
   favStore.hydrate()
   resumeStore.hydrate()
+  historyStore.hydrate()
 }

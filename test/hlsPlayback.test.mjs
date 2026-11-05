@@ -66,6 +66,32 @@ test('sem preferNative usa hls.js mesmo com HLS nativo no canPlay', () => {
   assert.equal(session.destroyed ?? FakeHls.prototype.destroyed, undefined)
 })
 
+test('depois do manifesto o hls.js chama play no video', () => {
+  const video = document.createElement('video')
+  const plays = []
+  video.play = () => {
+    plays.push(1)
+    return Promise.resolve()
+  }
+  class ReadyHls extends FakeHls {
+    static Events = { MANIFEST_PARSED: 'hlsManifestParsed', ERROR: 'hlsError' }
+    on(event, cb) {
+      this.listeners = this.listeners ?? {}
+      this.listeners[event] = cb
+    }
+    attachMedia(media) {
+      super.attachMedia(media)
+      this.listeners?.hlsManifestParsed?.()
+    }
+  }
+  attachHlsPlayback(video, liveUrl(), {
+    Hls: ReadyHls,
+    fetch: async () => {},
+    preferNative: false,
+  })
+  assert.equal(plays.length, 1)
+})
+
 test('destroy da sessão hls.js chama destroy do engine', () => {
   const video = document.createElement('video')
   const hls = []

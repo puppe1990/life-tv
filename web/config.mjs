@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   playlists: `${STORAGE_PREFIX}:playlists`,
   favs: `${STORAGE_PREFIX}:favs`,
   resume: `${STORAGE_PREFIX}:resume`,
+  history: `${STORAGE_PREFIX}:history`,
 }
 
 /** Conta do cofre local onde o seed guarda a senha inicial. */
