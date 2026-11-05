@@ -1,37 +1,39 @@
 # OpenFlix
 
-Domínio JS do player de **playlists próprias** Xtream Codes (`player_api`) e M3U. Arquitetura lida no APK LIFE TV / FlexTV LiveStore, sem clonar VPN, MAC cloud, TLS inseguro nem catálogo de terceiros.
+JS domain of a player for **your own** Xtream Codes (`player_api`) and M3U playlists. Architecture taken from the LIFE TV / FlexTV LiveStore APK. No VPN, MAC cloud, insecure TLS, or third-party catalog.
 
-Destino: shell Tauri 2 em landscape 10-foot (Dell). Hoje o núcleo é testável sem UI.
+Target: Tauri 2 10-foot landscape shell (Dell). The core is testable without the UI today.
+
+![OpenFlix 10-foot home](docs/home.png)
 
 ```bash
 npm ci
 npm test            # node --test + @faker-js/faker
-npm run css         # Tailwind CLI → web/style.css (tokens CRT em web/input.css)
+npm run css         # Tailwind CLI → web/style.css (CRT tokens in web/input.css)
 npm run ci          # css + prettier + lint + test
 npm run dev         # css + http://127.0.0.1:8792/web/
-npm run tauri:dist  # junta web/ + src/ em .tauri-dist (frontendDist do Tauri)
-npm run tauri:dev   # janela Tauri 2 em 1920x1080 com o front embutido
-npm run tauri:app   # empacota target-app/OpenFlix.app (release + codesign ad-hoc)
+npm run tauri:dist  # pack web/ + src/ into .tauri-dist (Tauri frontendDist)
+npm run tauri:dev   # Tauri 2 window at 1920x1080 with the bundled front
+npm run tauri:app   # package target-app/OpenFlix.app (release + ad-hoc codesign)
 ```
 
 Repo: https://github.com/puppe1990/openflix
 
-Notas da engenharia reversa do APK de referência (protocolo, ofuscação, endpoints):
+Reverse-engineering notes for the reference APK (protocol, obfuscation, endpoints):
 [docs/reverse-engineering.md](docs/reverse-engineering.md).
 
-Home 10-foot: **Ao vivo / Filmes / Séries / Ajustes**. Setas e Enter. Demo local sem rede.
+10-foot home: **Live / Movies / Series / Settings**. Arrows and Enter. Local demo, no network.
 
-No app Tauri as playlists, favoritos e retomada ficam em `life-tv.sqlite` (0600) no diretório de dados do app. Senhas Xtream continuam no cofre `secrets.json`.
+On the Tauri app, playlists, favorites, and resume live in `life-tv.sqlite` (0600) in the app data directory. Xtream passwords stay in the `secrets.json` vault.
 
-## O que entra
+## In scope
 
-- Login Xtream (`user_info` / `server_info`)
+- Xtream login (`user_info` / `server_info`)
 - Portal → `get.php` / `player_api.php` / `live|movie|series`
-- Playlist XC ou M3U **local** (MAC do add-playlist do app original fica de fora)
-- Catálogo por categoria, parse M3U, MIME adaptativo, resume, favorito e lock
+- Local XC or M3U playlist (the original app's add-playlist MAC stays out)
+- Catalog by category, M3U parse, adaptive MIME, resume, favorite, and lock
 
-## Fora
+## Out of scope
 
-- Phone-home com MAC, `libhax` / VPN, dump de chaves, streams que não são da playlist do usuário
-- Reusar arte do APK de referência no ícone ou no cabeçalho
+- MAC phone-home, `libhax` / VPN, key dumps, streams that are not from the user's playlist
+- Reusing art from the reference APK in the icon or the header
