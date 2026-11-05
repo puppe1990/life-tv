@@ -1,5 +1,5 @@
 /** Configuração de UI e persistência num lugar só. */
-export const BRAND = 'Life TV'
+export const BRAND = 'OpenFlix'
 
 export const STORAGE_PREFIX = 'life-tv'
 

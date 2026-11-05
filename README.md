@@ -1,4 +1,4 @@
-# Life TV
+# OpenFlix
 
 Domínio JS do player de **playlists próprias** Xtream Codes (`player_api`) e M3U. Arquitetura lida no APK LIFE TV / FlexTV LiveStore, sem clonar VPN, MAC cloud, TLS inseguro nem catálogo de terceiros.
 
@@ -12,10 +12,10 @@ npm run ci          # css + prettier + lint + test
 npm run dev         # css + http://127.0.0.1:8792/web/
 npm run tauri:dist  # junta web/ + src/ em .tauri-dist (frontendDist do Tauri)
 npm run tauri:dev   # janela Tauri 2 em 1920x1080 com o front embutido
-npm run tauri:app   # empacota target-app/Life TV.app (release + codesign ad-hoc)
+npm run tauri:app   # empacota target-app/OpenFlix.app (release + codesign ad-hoc)
 ```
 
-Repo: https://github.com/puppe1990/life-tv
+Repo: https://github.com/puppe1990/openflix
 
 Notas da engenharia reversa do APK de referência (protocolo, ofuscação, endpoints):
 [docs/reverse-engineering.md](docs/reverse-engineering.md).
@@ -34,4 +34,4 @@ No app Tauri as playlists, favoritos e retomada ficam em `life-tv.sqlite` (0600)
 ## Fora
 
 - Phone-home com MAC, `libhax` / VPN, dump de chaves, streams que não são da playlist do usuário
-- Arte do ícone/logo: pertence ao app de referência, usada só para uso local
+- Reusar arte do APK de referência no ícone ou no cabeçalho

@@ -4,11 +4,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONF="$ROOT/src-tauri/tauri.conf.json"
 
-# Identidade vem do tauri.conf.json: nada de nome/identificador fixo aqui.
+# Nome do .app vem do productName; o binário vem do Cargo (identifier decide os dados).
 IFS='|' read -r APP_NAME IDENTIFIER VERSION BIN <<<"$(node -e "
+  const fs = require('fs')
   const conf = require('$CONF')
-  const slug = conf.productName.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-  console.log([conf.productName, conf.identifier, conf.version, slug].join('|'))
+  const cargo = fs.readFileSync('$ROOT/src-tauri/Cargo.toml', 'utf8')
+  const bin = cargo.match(/^name = \"([^\"]+)\"/m)?.[1]
+  if (!bin) throw new Error('Cargo.toml sem name')
+  console.log([conf.productName, conf.identifier, conf.version, bin].join('|'))
 ")"
 
 APP_DIR="$ROOT/target-app"

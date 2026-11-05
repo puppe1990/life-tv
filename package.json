@@ -6,7 +6,7 @@
   "description": "Player de playlists próprias Xtream/M3U (domínio JS, TDD). Sem VPN, MAC cloud ou streams de terceiros.",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/puppe1990/life-tv.git"
+    "url": "git+https://github.com/puppe1990/openflix.git"
   },
   "engines": {
     "node": ">=22"

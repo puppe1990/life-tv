@@ -131,3 +131,20 @@
     border-radius: 4px;
   }
 }
+
+/* fora do @layer base: precisa ganhar do `flex` do Tailwind na barra do player */
+#pip #player-frame {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: 0.5rem;
+}
+
+#pip [data-player-toolbar] {
+  display: none !important;
+}
+
+#pip video {
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
