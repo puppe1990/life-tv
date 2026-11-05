@@ -58,6 +58,7 @@ test('bindCatalog e D-pad escolhem item do faker', () => {
   const b = fakerLiveStream({ categoryId: 1, name: faker.company.name() })
   const catalog = mapCatalog({ kind: 'live', categories: [cat], streams: [a, b] })
   let shell = bindCatalog(openHomeTile(createTvShell()), catalog)
+  assert.equal(shell.catalog.categories[0].name, 'Todos')
   assert.equal(shell.selectedItem.id, a.stream_id)
   shell = moveCatalog(shell, 1)
   assert.equal(shell.selectedItem.id, b.stream_id)

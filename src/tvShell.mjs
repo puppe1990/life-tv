@@ -1,3 +1,5 @@
+import { withAllCategory } from './allCategory.mjs'
+
 export const HOME_TILES = [
   { id: 'live', label: 'Ao vivo' },
   { id: 'movies', label: 'Filmes' },
@@ -55,10 +57,14 @@ export function openHomeTile(shell) {
 }
 
 export function bindCatalog(shell, catalog) {
-  const items = catalog.categories[0]?.items ?? []
+  const next =
+    catalog.kind === 'live'
+      ? { ...catalog, categories: withAllCategory(catalog.categories) }
+      : catalog
+  const items = next.categories[0]?.items ?? []
   return {
     ...shell,
-    catalog,
+    catalog: next,
     categoryIndex: 0,
     itemIndex: 0,
     selectedItem: items[0] ?? null,

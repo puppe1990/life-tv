@@ -3,6 +3,8 @@ import { test } from 'node:test'
 import {
   actionClass,
   playlistChipClass,
+  catalogDetailClass,
+  catalogGridClass,
   catCountClass,
   catItemClass,
   catListClass,
@@ -84,4 +86,24 @@ test('chips de categoria ficam numa faixa horizontal', () => {
   assert.match(cls, /flex-nowrap/)
   assert.match(cls, /overflow-x-auto/)
   assert.equal(cls.includes('flex-wrap'), false)
+})
+
+test('categorias ao vivo ficam numa lista vertical', () => {
+  const cls = catListClass('live')
+  assert.match(cls, /flex-col/)
+  assert.match(cls, /overflow-y-auto/)
+  assert.equal(cls.includes('flex-nowrap'), false)
+})
+
+test('item de categoria ao vivo é uma linha de largura total', () => {
+  assert.match(catItemClass(true, 'live'), /w-full/)
+  assert.match(catItemClass(true, 'live'), /bg-accent/)
+  assert.equal(catItemClass(false, 'live').includes('bg-accent'), false)
+})
+
+test('grade ao vivo é duas colunas: categorias | canais', () => {
+  const cls = catalogGridClass('live')
+  assert.match(cls, /grid-cols-\[18rem/)
+  assert.equal(catalogDetailClass('live').includes('hidden'), true)
+  assert.equal(catalogGridClass('movies').includes('xl:grid-cols-12'), true)
 })
